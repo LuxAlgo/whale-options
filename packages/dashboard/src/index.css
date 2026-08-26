@@ -1,0 +1,11 @@
+@import "tailwindcss";
+
+:root {
+  color-scheme: dark;
+}
+
+/* Thin, dark scrollbars — the table is the page; chrome stays out of the way. */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}

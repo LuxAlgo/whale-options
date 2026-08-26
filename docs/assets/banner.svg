@@ -1,0 +1,209 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 300" role="img" aria-label="Whale Options, a LuxAlgo open source project: the options-flow engine that shows its work">
+  <style>
+    @font-face { font-family: 'Aeonik'; font-weight: 700; src: url(data:font/woff2;base64,d09GMgABAAAAAAWUAA4AAAAACewAAAVBAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAGhYbgkocKgZgAHQRCAqICIZJATYCJAM4Cx4ABCAFgxgHIBsYCCAuDrI5cR1LnrEzvW5t54sjZBAQnjWbbqq0R7YvWQfx4YNxeT/I1UhvMX6akuKctrSFvhLBAvjvhRClXynF6Xu1pjZhC+yAXYyMjdAx5oE2F6INjP8Aldm6SiRLDpWrYiFFVd+GiBpILD9/U2dyYG+CACwAgIJAYEUgADOFqIDSqAmFAz2j+nts0IMEeGXMGznYZYM2uJ1IFFnBzDiBatKGehCY1tj/rzEwNOj6e652+ucopFRQhxAisK1gQbhliQkjGg1IVNGLst87gHEUUDHC/z+0yf+3JvmRvsw1nA74n82aXwW822GOuy6YsCIRqJhQAAHQLpFMtC2TZJWooCfuz4wtQjHd2HI4Wsp9yi1UUCvK18AOM0x5zTmlXVUz6lRDtGDPhm05ODjDxiTD+H+AVRZn0pzSX93RtqGH5pU6cEMi2Czp95tO6JDYaAsfJVqMWHDg+R8CSoPBhvtz+B/z4lMP3nfPXXfeTqBt8T8KqB2O8ANcQJQG8QSwSkAFMTlWCY7v2WK22jUPg7tZSneT0dHSxPX3guDoVbGhC8PiVsf8WBCirQxbGGpeYZ0xMBju/gxOs8yYFu7EiV+6fhKXmB+kadKXtc8nmyUoTlv5GWXecZVwVZn3eQwEjV6VuDDJHE3oPM/mwOd7tKv1U/QI65ensjNXQvsz0qLWoO32TKsS9LswFRxl3jST1agdTCGfmlw4Wiatc9DP2tNXJzAvfWXQwi8RXDAzaC/F50hdhnKmNJ2Y1thWcj2thzOukRZXupg9zLrCgi/AHDuu88qYzpYDj83efnX/+rjyZu2z3gHzos0rYnvqzELTWRUNszLvdqeGeVWvvPZckxs/7WHDOfIedrNbDXubHSGGixfeDDvgP3DhImzzVnfUFU6LvJ0Xebo7S0+nfM+qXl939Hc8eK3X9RqN+TZ/04juIkS7iY/xZ4P3b7z8v5z2vmKzgWwhx4wteThsN1x/F5Xz8Obkoj9r3nb/2HMgHrXbsR7BmZoHozS1lD29aJGvGYVclMRy8/846sYunjNG6CIPNPP33mt8+3xTmEPf2Qa1PG6GxUfFe26qOHUU8nk+wVZ2wYjlI8ZG6kun7ag77P8mrcL10+o1il5YnEJa69cbhx08lOpf0J9BGfR1h5RyK9502vTIphTz4uHhzeZKOn0eN7O+fNLu/8dnwZQ1VLFZfpQpklim6A+MyMs/UCN7zdGe7PvKyTz8tEHCqdi3PMdCQS8nrAu0o17947d+ym7jxxZTqscKueq5b3LpcL5QuoQKvV0NTaay9RLdXtVq7nWXOguELrf+GKWdaYrn5JLN6pTqV3fXj9svRJD5kmmPe5/ReAFPs1fR9VW8NdTjUjtdO8Nkj6mlW9ZfGdb4yHj9S4Tzfc6W+nMm/0xRe9Hc/NzX1bKqr8tPLw0AAlDgVa/O9HWs9dWoGQEIu9xigHjcxv35Xw/nAYZ2IDCiACDg7ZBz7pegWMvISj2vg/zKTPEb9A40MIRhlLM4lIdn+DUGiRTaJAZtc/KVW5HgkrWpqHwABQE40I92AAQ0y0APGhEyqTkGIL/Awhi/gpEZfh2lWOCXeHDGrzKIl8fR4yGK0RA7DoK4MKLHgIc5ijGQeWxUoNwPsSUqOehA61A2ua0XGxpcBFnBRn0sWJijQyHiBlmLGy2Bz0ANKyJrsWNDNIPagCUAG0zKfU2vSUPocMDRyuT0Mq8M6OeUPKMLNxPeOVd07DDseFAv8KG6PJahPEN1bo9GibkwetCZzQDaIsOVKUMVKoOy+jpaKjSi8f7NOQAA) format('woff2'); }
+    @font-face { font-family: 'Aeonik'; font-weight: 500; src: url(data:font/woff2;base64,d09GMk9UVE8AAAWgAAwAAAAACUgAAAVUAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAADYcHGhYbgnAcKgZgAHwBNgIkA0AEBgWDHgcgG3AIUdTjqAkIvjqwwZh0aMfGFA6iKa12cBDLcxC1ZpjH4Wc/6Z0Hr8XzD4e/c+9vbo68bAMFMgUiTTCyT4FtfvD//Vg7931Z8bpJrK4nUYhMV0mRoZYNnZBEExU/WOcNQCRYnzNKZMtL8x/YZhawZAk2bK1eZbWuz/nYvlEA/1WHb/X7qb2XsAPWme9iTFxshI4xgBsGSegQ2loXWeDxxKrKV1VJV5XcohfUSzCdf7bxzw1fFOUXF9tN029Aoa8EOZSPsDWrWtSKVaPoddQxTPsiTOc1UHdL0IB8E4OCEcvyhWg0kEapaFFyseMpWrywHCo6daOjrUdH62u4LXNcifNXxqXD3fVWj61z+PhPAlzbEGp+KhA1BiYWdk5uHl5+AUEhUeKqxIn6Hp6eZSqlSEZqWz501Po22l61ex1POfwzxIgPUY3BifiIyoMRLK37bsqQtSpZ//9R+KC8FKCjWwyNYPk0RTdLQBmEumDbJlMoW1zdVg4zGSrkwg7HJzeMzkctS2yXSWK/YyRxLippph6kp0TqRwMQQ/HoKvNdH4hKv2zyoAsOf9Dhz9ZwZns7sTwSlnlR7YtLlw7JqwoxP5UYuulA6/EsMbNKNiaVmUxl3HDA8c0NY9rjVsW3LigbTSFUWtmTDNl+MCOKtvLBNAUt0UJoPHxIY6lcMlQsdPfvQSff/stxfPyRYjZdU5zE+Zpy/EfUEpWZCfzzzgzuvKbESDbSPyUaEqjjWR62vG7IEdCNZBSgTgUbiPTdqBt06IROhH3dJO9tEbafHhhF9zOObLricWR80uIe2CR+wQMRHJZ/lmKR4voBMywFvlOKTHsjtrSFT1c6VqnaukO5kcvzI7+xFxXuNdPygFg2HsSB8Gnvtdf/TBMwu0hSXe1QlVfwq1YewXiB4pa4C6C6GYXd3xEtL4REzFEK2hpEms011r8wPbp+6P3XGx1qrpTAsRBmp36/tX85e2pZ4kmGpjeCxsjQjnk5oZqpbpPeZe0Nrn+aJfFjtyhOAQO9TnCKEwOzvWci/+gOrgrU4V8c6qG+04MOkpJEnNfBkdiuDulI0+4JRElxEMfxe9eKEFlUxbbPKrQtwMrSJAQwBL8YElkqSYt+i2FRIAuLIeRkePSPVXIEU6LADkCJKRDBlgYf6uV2YwDCp5PTBoQ8mIBAHi8OG2BDIDyTJEnmHg9fKhJIwtZ8/+fW7wCMC+MBmD/BvAfzA8DcHuRu4H87e33u/nf9xyKY76Bn+nnyKe+4dDLyG79f8Fbz5v/SN6uX+YPJtRKTTme3fkbFpA1v/eJ2Qy+qeMq7koKihbMTsKkgEifH0O8FWKNYspmWkb1clmeGxgFAuIeFEtdu2WIRqxdy/Sttxm0VxrdtC7jamwcqkUG3oxMB5nHsxd2gBD8qJovtUxiI0+5YfdnH+DkaFDCcoJGc7vqvnRGjiSqy8orKaho6hiYTQFe09H6L+Xzt1VdefvGF5597huTuEijelqXco4iK/0nn3sFy05llLvFPDBRPDnCzYcEGuw4W23ilqPXqZZoHHUjCv9m7ZDeaLSHTNM2MQB13E44UkaOzzhgir9UHQxsg71bjTkCAe3AArNtFo5UUeAHgpGzDmbwbzun4HvYsF5z7P09UjkPe1s7dwdzUzImGBcZKw8djApqEDXI7RCMr9Z9t4A5awPUMWBVs1XTPZIFjIwgDgsYlBj4AWeS2NmguaTTV5tzZegimDbkVZBh8JuApDMbltQ2UcMQkpk42ah4czbmjmgQzrXCCEbh4fC9c1ZxHlLNN0kQsETRIlG6IiRA0CFVsoOimm0jQ5KxNRxUA) format('woff2'); }
+    @font-face { font-family: 'Aeonik'; font-weight: 400; src: url(data:font/woff2;base64,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) format('woff2'); }
+  </style>
+  <defs>
+    <linearGradient id="tapefade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#fff" stop-opacity="0"/>
+      <stop offset="0.06" stop-color="#fff" stop-opacity="1"/>
+      <stop offset="0.94" stop-color="#fff" stop-opacity="1"/>
+      <stop offset="1" stop-color="#fff" stop-opacity="0"/>
+    </linearGradient>
+    <mask id="tapemask"><rect x="60" y="200" width="1080" height="80" fill="url(#tapefade)"/></mask>
+  </defs>
+
+  <rect width="1200" height="300" fill="#050505"/>
+
+  <!-- eyebrow -->
+  <g transform="translate(72,58) scale(0.42)">
+    <path fill="#ededed" d="M36.217 34.646l4.139-7.231L25.868 2.108 11.381 27.415h8.279l6.209-10.845z"/>
+    <path fill="#ededed" d="M31.042 29.224 8.267 29.22 24.833.3h-8.277L0 29.216l4.137 7.237h31.045z"/>
+  </g>
+  <text x="100" y="70" font-family="Aeonik, -apple-system, 'Segoe UI', sans-serif" font-weight="500" font-size="12.5" letter-spacing="3.5" fill="#8a8a8a">A LUXALGO OPEN SOURCE PROJECT</text>
+
+  <!-- wordmark + tagline -->
+  <text x="70" y="164" font-family="Aeonik, -apple-system, 'Segoe UI', sans-serif" font-weight="700" font-size="76" letter-spacing="-1.8" fill="#f5f5f5">Whale Options</text>
+  <text x="72" y="203" font-family="Aeonik, -apple-system, 'Segoe UI', sans-serif" font-weight="400" font-size="19" fill="#9a9a9a">The options-flow engine that shows its work.</text>
+
+  <!-- the tape: prints, one sweep, one block -->
+  <g mask="url(#tapemask)">
+  <line x1='72.0' y1='264' x2='72.0' y2='258.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='77.0' y1='264' x2='77.0' y2='253.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='83.6' y1='264' x2='83.6' y2='256.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='90.3' y1='264' x2='90.3' y2='256.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='96.7' y1='264' x2='96.7' y2='254.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='101.7' y1='264' x2='101.7' y2='259.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='106.7' y1='264' x2='106.7' y2='255.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='111.4' y1='264' x2='111.4' y2='246.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='118.4' y1='264' x2='118.4' y2='259.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='125.1' y1='264' x2='125.1' y2='260.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='130.0' y1='264' x2='130.0' y2='253.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='137.4' y1='264' x2='137.4' y2='260.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='143.8' y1='264' x2='143.8' y2='256.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='150.9' y1='264' x2='150.9' y2='254.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='155.9' y1='264' x2='155.9' y2='255.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='162.4' y1='264' x2='162.4' y2='257.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='166.9' y1='264' x2='166.9' y2='259.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='173.6' y1='264' x2='173.6' y2='257.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='179.7' y1='264' x2='179.7' y2='254.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='185.2' y1='264' x2='185.2' y2='252.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='192.3' y1='264' x2='192.3' y2='254.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='197.1' y1='264' x2='197.1' y2='255.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='204.3' y1='264' x2='204.3' y2='255.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='210.6' y1='264' x2='210.6' y2='257.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='218.0' y1='264' x2='218.0' y2='259.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='224.7' y1='264' x2='224.7' y2='255.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='230.6' y1='264' x2='230.6' y2='253.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='235.7' y1='264' x2='235.7' y2='255.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='242.9' y1='264' x2='242.9' y2='258.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='248.5' y1='264' x2='248.5' y2='253.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='255.2' y1='264' x2='255.2' y2='259.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='259.8' y1='264' x2='259.8' y2='259.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='264.5' y1='264' x2='264.5' y2='259.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='269.5' y1='264' x2='269.5' y2='258.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='276.0' y1='264' x2='276.0' y2='260.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='282.3' y1='264' x2='282.3' y2='255.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='288.3' y1='264' x2='288.3' y2='253.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='295.3' y1='264' x2='295.3' y2='260.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='302.6' y1='264' x2='302.6' y2='255.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='309.0' y1='264' x2='309.0' y2='259.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='315.9' y1='264' x2='315.9' y2='260.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='322.2' y1='264' x2='322.2' y2='258.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='329.4' y1='264' x2='329.4' y2='253.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='334.4' y1='264' x2='334.4' y2='254.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='341.4' y1='264' x2='341.4' y2='254.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='347.6' y1='264' x2='347.6' y2='258.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='354.2' y1='264' x2='354.2' y2='259.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='360.5' y1='264' x2='360.5' y2='259.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='366.4' y1='264' x2='366.4' y2='260.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='373.7' y1='264' x2='373.7' y2='247.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='380.4' y1='264' x2='380.4' y2='247.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='385.5' y1='264' x2='385.5' y2='254.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='391.1' y1='264' x2='391.1' y2='259.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='396.2' y1='264' x2='396.2' y2='254.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='401.2' y1='264' x2='401.2' y2='255.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='405.8' y1='264' x2='405.8' y2='254.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='410.3' y1='264' x2='410.3' y2='254.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='416.0' y1='264' x2='416.0' y2='259.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='422.3' y1='264' x2='422.3' y2='255.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='428.5' y1='264' x2='428.5' y2='255.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='433.5' y1='264' x2='433.5' y2='257.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='440.4' y1='264' x2='440.4' y2='254.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='447.0' y1='264' x2='447.0' y2='260.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='451.7' y1='264' x2='451.7' y2='254.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='458.3' y1='264' x2='458.3' y2='255.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='465.1' y1='264' x2='465.1' y2='260.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='470.7' y1='264' x2='470.7' y2='254.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='475.7' y1='264' x2='475.7' y2='260.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='481.1' y1='264' x2='481.1' y2='253.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='488.1' y1='264' x2='488.1' y2='259.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='495.5' y1='264' x2='495.5' y2='254.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='502.7' y1='264' x2='502.7' y2='253.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='508.1' y1='264' x2='508.1' y2='254.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='513.6' y1='264' x2='513.6' y2='259.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='519.5' y1='264' x2='519.5' y2='256.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='525.5' y1='264' x2='525.5' y2='259.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='531.6' y1='264' x2='531.6' y2='258.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='538.8' y1='264' x2='538.8' y2='259.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='545.5' y1='264' x2='545.5' y2='256.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='552.0' y1='264' x2='552.0' y2='258.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='559.1' y1='264' x2='559.1' y2='247.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='566.6' y1='264' x2='566.6' y2='258.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='572.7' y1='264' x2='572.7' y2='248.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='577.9' y1='264' x2='577.9' y2='253.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='585.2' y1='264' x2='585.2' y2='257.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='589.9' y1='264' x2='589.9' y2='259.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='595.5' y1='264' x2='595.5' y2='259.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='600.2' y1='264' x2='600.2' y2='256.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='607.3' y1='264' x2='607.3' y2='256.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='614.0' y1='264' x2='614.0' y2='255.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='618.7' y1='264' x2='618.7' y2='253.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='625.7' y1='264' x2='625.7' y2='255.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='633.0' y1='264' x2='633.0' y2='253.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='637.6' y1='264' x2='637.6' y2='253.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='643.4' y1='264' x2='643.4' y2='257.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='648.0' y1='264' x2='648.0' y2='256.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='652.8' y1='264' x2='652.8' y2='253.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='659.9' y1='264' x2='659.9' y2='256.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='665.8' y1='264' x2='665.8' y2='258.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='673.1' y1='264' x2='673.1' y2='253.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='679.1' y1='264' x2='679.1' y2='255.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='684.1' y1='264' x2='684.1' y2='253.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='689.5' y1='264' x2='689.5' y2='249.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='694.4' y1='264' x2='694.4' y2='247.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='699.7' y1='264' x2='699.7' y2='254.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='707.1' y1='264' x2='707.1' y2='259.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='712.1' y1='264' x2='712.1' y2='249.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='716.8' y1='264' x2='716.8' y2='256.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='723.6' y1='264' x2='723.6' y2='246.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='729.2' y1='264' x2='729.2' y2='253.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='734.6' y1='264' x2='734.6' y2='253.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='739.7' y1='264' x2='739.7' y2='257.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='744.9' y1='264' x2='744.9' y2='249.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='750.7' y1='264' x2='750.7' y2='258.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='756.2' y1='264' x2='756.2' y2='257.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='761.2' y1='264' x2='761.2' y2='260.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='766.5' y1='264' x2='766.5' y2='257.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='773.9' y1='264' x2='773.9' y2='254.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='779.1' y1='264' x2='779.1' y2='258.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='784.4' y1='264' x2='784.4' y2='258.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='789.9' y1='264' x2='789.9' y2='253.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='797.1' y1='264' x2='797.1' y2='256.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='803.7' y1='264' x2='803.7' y2='256.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='809.9' y1='264' x2='809.9' y2='257.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='814.7' y1='264' x2='814.7' y2='257.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='819.6' y1='264' x2='819.6' y2='249.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='824.9' y1='264' x2='824.9' y2='257.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='832.3' y1='264' x2='832.3' y2='257.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='839.4' y1='264' x2='839.4' y2='258.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='845.2' y1='264' x2='845.2' y2='254.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='852.4' y1='264' x2='852.4' y2='234.9' stroke='#c084fc' stroke-width='2.4' stroke-linecap='round'/>
+  <line x1='859.8' y1='264' x2='859.8' y2='237.4' stroke='#c084fc' stroke-width='2.4' stroke-linecap='round'/>
+  <line x1='867.2' y1='264' x2='867.2' y2='237.2' stroke='#c084fc' stroke-width='2.4' stroke-linecap='round'/>
+  <line x1='874.6' y1='264' x2='874.6' y2='234.2' stroke='#c084fc' stroke-width='2.4' stroke-linecap='round'/>
+  <line x1='882.0' y1='264' x2='882.0' y2='235.6' stroke='#c084fc' stroke-width='2.4' stroke-linecap='round'/>
+  <line x1='889.4' y1='264' x2='889.4' y2='238.2' stroke='#c084fc' stroke-width='2.4' stroke-linecap='round'/>
+  <line x1='896.8' y1='264' x2='896.8' y2='249.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='902.9' y1='264' x2='902.9' y2='257.2' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='910.3' y1='264' x2='910.3' y2='255.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='916.1' y1='264' x2='916.1' y2='254.8' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='922.1' y1='264' x2='922.1' y2='252.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='926.7' y1='264' x2='926.7' y2='255.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='933.2' y1='264' x2='933.2' y2='250.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='939.1' y1='264' x2='939.1' y2='258.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='944.7' y1='264' x2='944.7' y2='249.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='949.3' y1='264' x2='949.3' y2='257.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='956.2' y1='264' x2='956.2' y2='255.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='960.7' y1='264' x2='960.7' y2='255.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='967.1' y1='264' x2='967.1' y2='253.1' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='972.8' y1='264' x2='972.8' y2='256.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='979.2' y1='264' x2='979.2' y2='259.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='985.5' y1='264' x2='985.5' y2='255.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='992.2' y1='264' x2='992.2' y2='253.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='999.0' y1='264' x2='999.0' y2='259.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1004.0' y1='264' x2='1004.0' y2='252.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1009.7' y1='264' x2='1009.7' y2='234.0' stroke='#22d3ee' stroke-width='3.4' stroke-linecap='round'/>
+  <line x1='1017.7' y1='264' x2='1017.7' y2='260.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1025.0' y1='264' x2='1025.0' y2='258.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1030.5' y1='264' x2='1030.5' y2='254.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1037.9' y1='264' x2='1037.9' y2='257.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1043.7' y1='264' x2='1043.7' y2='249.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1050.0' y1='264' x2='1050.0' y2='253.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1055.5' y1='264' x2='1055.5' y2='246.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1062.1' y1='264' x2='1062.1' y2='258.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1068.7' y1='264' x2='1068.7' y2='255.9' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1075.8' y1='264' x2='1075.8' y2='253.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1080.8' y1='264' x2='1080.8' y2='257.4' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1088.2' y1='264' x2='1088.2' y2='257.0' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1092.9' y1='264' x2='1092.9' y2='260.5' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1099.4' y1='264' x2='1099.4' y2='259.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1105.8' y1='264' x2='1105.8' y2='258.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1112.9' y1='264' x2='1112.9' y2='260.7' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1119.6' y1='264' x2='1119.6' y2='253.3' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  <line x1='1126.0' y1='264' x2='1126.0' y2='254.6' stroke='#3a3a3a' stroke-width='2.0' stroke-linecap='round'/>
+  </g>
+  <text x="871" y="224" text-anchor="middle" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, Menlo, monospace" font-size="11.5" fill="#a78bfa">SWEEP &#183; 6 legs &#183; score 67</text>
+  <text x="1010" y="224" text-anchor="middle" font-family="ui-monospace, 'SF Mono', 'Cascadia Code', Consolas, Menlo, monospace" font-size="11.5" fill="#67e8f9">BLOCK</text>
+</svg>

@@ -1,0 +1,30 @@
+# Daily feed-health canary for the massive adapter (the README badge reads
+# this workflow by filename). The canary script prints one line —
+# `PASS|SKIP|FAIL massive: ...` — and exits non-zero only on FAIL.
+#
+# Without MASSIVE_API_KEY in repo secrets the canary SKIPs (exit 0) by
+# design, so a green badge on a fork with no secrets means "not exercised",
+# not "healthy". This repo's own secret makes the badge a real daily check
+# of the vendor surface the adapter depends on.
+name: canary-massive
+
+on:
+  schedule:
+    - cron: "21 13 * * 1-5" # weekdays 13:21 UTC, staggered a few minutes per feed
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @luxalgo/whale-core build
+      - run: pnpm canary:massive
+        env:
+          MASSIVE_API_KEY: ${{ secrets.MASSIVE_API_KEY }}

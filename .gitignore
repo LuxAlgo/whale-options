@@ -1,0 +1,18 @@
+# dependencies / builds
+node_modules/
+dist/
+coverage/
+.vite/
+
+# local engine data (flight recorder, tapes recorded by users)
+.whale/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# misc
+.DS_Store
+*.log
+.env
+.env.*

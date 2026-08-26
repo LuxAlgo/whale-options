@@ -1,0 +1,30 @@
+# Daily feed-health canary for the tradier adapter (the README badge reads
+# this workflow by filename). The canary script prints one line —
+# `PASS|SKIP|FAIL tradier: ...` — and exits non-zero only on FAIL.
+#
+# Without TRADIER_ACCESS_TOKEN in repo secrets the canary SKIPs (exit 0) by
+# design, so a green badge on a fork with no secrets means "not exercised",
+# not "healthy". This repo's own secret makes the badge a real daily check
+# (a sandbox token works too — set TRADIER_API_BASE to the sandbox URL).
+name: canary-tradier
+
+on:
+  schedule:
+    - cron: "29 13 * * 1-5" # weekdays 13:29 UTC, staggered a few minutes per feed
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @luxalgo/whale-core build
+      - run: pnpm canary:tradier
+        env:
+          TRADIER_ACCESS_TOKEN: ${{ secrets.TRADIER_ACCESS_TOKEN }}

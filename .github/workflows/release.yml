@@ -1,0 +1,42 @@
+# Publishes the four @luxalgo/whale-* packages to npm.
+#
+# Manual trigger only (Actions → release → Run workflow). Requirements:
+#   - repo secret NPM_TOKEN: a granular npm access token from the @luxalgo
+#     npm org with read/write on packages (automation tokens bypass OTP).
+#   - versions in packages/*/package.json must not already exist on npm —
+#     npm refuses to republish a version; bump versions and push first.
+#
+# The full quality gate runs before anything publishes. Publishing uses npm
+# provenance (id-token) so every package is cryptographically linked to the
+# exact commit and workflow run that built it.
+name: release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write # npm provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          registry-url: "https://registry.npmjs.org"
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      # workspace:* dependency ranges are rewritten to real versions by pnpm
+      # at publish time; the private root package is skipped automatically.
+      - run: pnpm -r publish --access public --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          NPM_CONFIG_PROVENANCE: "true"

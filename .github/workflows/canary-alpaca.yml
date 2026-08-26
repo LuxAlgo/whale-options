@@ -1,0 +1,32 @@
+# Daily feed-health canary for the alpaca adapter (the README badge reads
+# this workflow by filename). The canary script prints one line —
+# `PASS|SKIP|FAIL alpaca: ...` — and exits non-zero only on FAIL.
+#
+# Without ALPACA_API_KEY_ID + ALPACA_API_SECRET_KEY in repo secrets the
+# canary SKIPs (exit 0) by design, so a green badge on a fork with no
+# secrets means "not exercised", not "healthy". This repo's own secrets
+# make the badge a real daily check: condition-table drift against the
+# vendor's trade-conditions meta endpoint fails it loudly.
+name: canary-alpaca
+
+on:
+  schedule:
+    - cron: "25 13 * * 1-5" # weekdays 13:25 UTC, staggered a few minutes per feed
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @luxalgo/whale-core build
+      - run: pnpm canary:alpaca
+        env:
+          ALPACA_API_KEY_ID: ${{ secrets.ALPACA_API_KEY_ID }}
+          ALPACA_API_SECRET_KEY: ${{ secrets.ALPACA_API_SECRET_KEY }}

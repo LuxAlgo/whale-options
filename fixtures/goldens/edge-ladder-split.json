@@ -1,0 +1,742 @@
+[
+  {
+    "id": "ev_c0f1184af0c8d7d2",
+    "ts": 1787580000000,
+    "sessionDate": "2026-08-24",
+    "kind": "print",
+    "side": "buy",
+    "underlying": "NVDA",
+    "contract": "NVDA260918C00200000",
+    "expiry": "2026-09-18",
+    "strike": 200,
+    "right": "C",
+    "legs": [
+      {
+        "seq": 0,
+        "ts": 1787580000000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 30,
+        "exchange": "C",
+        "conditions": [
+          "regular"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787579999900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      }
+    ],
+    "legCount": 1,
+    "premium": 7500,
+    "size": 30,
+    "price": 2.5,
+    "dte": 25.25,
+    "otmPct": 0.0256,
+    "spot": 195,
+    "volOiRatio": 0.012,
+    "oi": 5000,
+    "exchanges": [
+      "C"
+    ],
+    "score": {
+      "total": 24.2,
+      "components": {
+        "volumeVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "dayVolume": 60,
+            "avgDailyVolume": null
+          },
+          "note": "no volume baseline for this contract yet"
+        },
+        "premiumVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "premium": 7500,
+            "samples": 2
+          },
+          "note": "premium distribution too thin (2/50 samples)"
+        },
+        "volOi": {
+          "value": 0.0074,
+          "weight": 0.15,
+          "weighted": 0.19,
+          "raw": {
+            "dayVolume": 60,
+            "oi": 5000,
+            "ratio": 0.012,
+            "capRatio": 4,
+            "openingFlowLikely": "no"
+          }
+        },
+        "aggression": {
+          "value": 0.7,
+          "weight": 0.2,
+          "weighted": 23.33,
+          "raw": {
+            "side": "buy",
+            "throughQuote": "no",
+            "kind": "print",
+            "isoCorroborated": "no"
+          }
+        },
+        "urgency": {
+          "value": 0.0402,
+          "weight": 0.1,
+          "weighted": 0.67,
+          "raw": {
+            "dte": 25.25,
+            "dteFactor": 0.08,
+            "otmPct": 0.0256,
+            "otmFactor": 0.171
+          }
+        },
+        "repetition": {
+          "value": 0,
+          "weight": 0.15,
+          "weighted": 0,
+          "raw": {
+            "contractHits": 0,
+            "underlyingHits": 0,
+            "weightedHits": 0,
+            "capHits": 8
+          }
+        }
+      },
+      "missing": [
+        "volumeVsBaseline",
+        "premiumVsBaseline"
+      ],
+      "baselineDays": 0,
+      "coldStart": true
+    },
+    "reasons": [
+      "aggressor buy: 2.5 at ask 2.5 (nbbo 2.45×2.5, 100ms old)",
+      "cold start: 0/5 baseline sessions; score uncertainty is wider"
+    ],
+    "feedId": "replay",
+    "seq": 0
+  },
+  {
+    "id": "ev_0fcd24ca1a911368",
+    "ts": 1787580120000,
+    "sessionDate": "2026-08-24",
+    "kind": "print",
+    "side": "buy",
+    "underlying": "NVDA",
+    "contract": "NVDA260918C00200000",
+    "expiry": "2026-09-18",
+    "strike": 200,
+    "right": "C",
+    "legs": [
+      {
+        "seq": 1,
+        "ts": 1787580120000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 30,
+        "exchange": "C",
+        "conditions": [
+          "regular"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787580119900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      }
+    ],
+    "legCount": 1,
+    "premium": 7500,
+    "size": 30,
+    "price": 2.5,
+    "dte": 25.249,
+    "otmPct": 0.0256,
+    "spot": 195,
+    "volOiRatio": 0.018,
+    "oi": 5000,
+    "exchanges": [
+      "C"
+    ],
+    "score": {
+      "total": 34.7,
+      "components": {
+        "volumeVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "dayVolume": 90,
+            "avgDailyVolume": null
+          },
+          "note": "no volume baseline for this contract yet"
+        },
+        "premiumVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "premium": 7500,
+            "samples": 3
+          },
+          "note": "premium distribution too thin (3/50 samples)"
+        },
+        "volOi": {
+          "value": 0.0111,
+          "weight": 0.15,
+          "weighted": 0.28,
+          "raw": {
+            "dayVolume": 90,
+            "oi": 5000,
+            "ratio": 0.018,
+            "capRatio": 4,
+            "openingFlowLikely": "no"
+          }
+        },
+        "aggression": {
+          "value": 0.7,
+          "weight": 0.2,
+          "weighted": 23.33,
+          "raw": {
+            "side": "buy",
+            "throughQuote": "no",
+            "kind": "print",
+            "isoCorroborated": "no"
+          }
+        },
+        "urgency": {
+          "value": 0.0402,
+          "weight": 0.1,
+          "weighted": 0.67,
+          "raw": {
+            "dte": 25.25,
+            "dteFactor": 0.08,
+            "otmPct": 0.0256,
+            "otmFactor": 0.171
+          }
+        },
+        "repetition": {
+          "value": 0.417,
+          "weight": 0.15,
+          "weighted": 10.43,
+          "raw": {
+            "contractHits": 1,
+            "underlyingHits": 1,
+            "weightedHits": 1.5,
+            "capHits": 8
+          }
+        }
+      },
+      "missing": [
+        "volumeVsBaseline",
+        "premiumVsBaseline"
+      ],
+      "baselineDays": 0,
+      "coldStart": true
+    },
+    "reasons": [
+      "aggressor buy: 2.5 at ask 2.5 (nbbo 2.45×2.5, 100ms old)",
+      "cold start: 0/5 baseline sessions; score uncertainty is wider"
+    ],
+    "feedId": "replay",
+    "seq": 1
+  },
+  {
+    "id": "ev_e813b1b8c5173b97",
+    "ts": 1787580240000,
+    "sessionDate": "2026-08-24",
+    "kind": "print",
+    "side": "buy",
+    "underlying": "NVDA",
+    "contract": "NVDA260918C00200000",
+    "expiry": "2026-09-18",
+    "strike": 200,
+    "right": "C",
+    "legs": [
+      {
+        "seq": 2,
+        "ts": 1787580240000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 30,
+        "exchange": "C",
+        "conditions": [
+          "regular"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787580239900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      }
+    ],
+    "legCount": 1,
+    "premium": 7500,
+    "size": 30,
+    "price": 2.5,
+    "dte": 25.247,
+    "otmPct": 0.0256,
+    "spot": 195,
+    "volOiRatio": 0.024,
+    "oi": 5000,
+    "exchanges": [
+      "C"
+    ],
+    "score": {
+      "total": 40.1,
+      "components": {
+        "volumeVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "dayVolume": 120,
+            "avgDailyVolume": null
+          },
+          "note": "no volume baseline for this contract yet"
+        },
+        "premiumVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "premium": 7500,
+            "samples": 4
+          },
+          "note": "premium distribution too thin (4/50 samples)"
+        },
+        "volOi": {
+          "value": 0.0147,
+          "weight": 0.15,
+          "weighted": 0.37,
+          "raw": {
+            "dayVolume": 120,
+            "oi": 5000,
+            "ratio": 0.024,
+            "capRatio": 4,
+            "openingFlowLikely": "no"
+          }
+        },
+        "aggression": {
+          "value": 0.7,
+          "weight": 0.2,
+          "weighted": 23.33,
+          "raw": {
+            "side": "buy",
+            "throughQuote": "no",
+            "kind": "print",
+            "isoCorroborated": "no"
+          }
+        },
+        "urgency": {
+          "value": 0.0402,
+          "weight": 0.1,
+          "weighted": 0.67,
+          "raw": {
+            "dte": 25.25,
+            "dteFactor": 0.08,
+            "otmPct": 0.0256,
+            "otmFactor": 0.171
+          }
+        },
+        "repetition": {
+          "value": 0.6309,
+          "weight": 0.15,
+          "weighted": 15.77,
+          "raw": {
+            "contractHits": 2,
+            "underlyingHits": 2,
+            "weightedHits": 3,
+            "capHits": 8
+          }
+        }
+      },
+      "missing": [
+        "volumeVsBaseline",
+        "premiumVsBaseline"
+      ],
+      "baselineDays": 0,
+      "coldStart": true
+    },
+    "reasons": [
+      "aggressor buy: 2.5 at ask 2.5 (nbbo 2.45×2.5, 100ms old)",
+      "cold start: 0/5 baseline sessions; score uncertainty is wider"
+    ],
+    "feedId": "replay",
+    "seq": 2
+  },
+  {
+    "id": "ev_512047dd70e966b7",
+    "ts": 1787580360000,
+    "sessionDate": "2026-08-24",
+    "kind": "print",
+    "side": "buy",
+    "underlying": "NVDA",
+    "contract": "NVDA260918C00200000",
+    "expiry": "2026-09-18",
+    "strike": 200,
+    "right": "C",
+    "legs": [
+      {
+        "seq": 3,
+        "ts": 1787580360000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 30,
+        "exchange": "C",
+        "conditions": [
+          "regular"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787580359900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      }
+    ],
+    "legCount": 1,
+    "premium": 7500,
+    "size": 30,
+    "price": 2.5,
+    "dte": 25.246,
+    "otmPct": 0.0256,
+    "spot": 195,
+    "volOiRatio": 0.024,
+    "oi": 5000,
+    "exchanges": [
+      "C"
+    ],
+    "score": {
+      "total": 43.8,
+      "components": {
+        "volumeVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "dayVolume": 120,
+            "avgDailyVolume": null
+          },
+          "note": "no volume baseline for this contract yet"
+        },
+        "premiumVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "premium": 7500,
+            "samples": 4
+          },
+          "note": "premium distribution too thin (4/50 samples)"
+        },
+        "volOi": {
+          "value": 0.0147,
+          "weight": 0.15,
+          "weighted": 0.37,
+          "raw": {
+            "dayVolume": 120,
+            "oi": 5000,
+            "ratio": 0.024,
+            "capRatio": 4,
+            "openingFlowLikely": "no"
+          }
+        },
+        "aggression": {
+          "value": 0.7,
+          "weight": 0.2,
+          "weighted": 23.33,
+          "raw": {
+            "side": "buy",
+            "throughQuote": "no",
+            "kind": "print",
+            "isoCorroborated": "no"
+          }
+        },
+        "urgency": {
+          "value": 0.0403,
+          "weight": 0.1,
+          "weighted": 0.67,
+          "raw": {
+            "dte": 25.25,
+            "dteFactor": 0.08,
+            "otmPct": 0.0256,
+            "otmFactor": 0.171
+          }
+        },
+        "repetition": {
+          "value": 0.7759,
+          "weight": 0.15,
+          "weighted": 19.4,
+          "raw": {
+            "contractHits": 3,
+            "underlyingHits": 3,
+            "weightedHits": 4.5,
+            "capHits": 8
+          }
+        }
+      },
+      "missing": [
+        "volumeVsBaseline",
+        "premiumVsBaseline"
+      ],
+      "baselineDays": 0,
+      "coldStart": true
+    },
+    "reasons": [
+      "aggressor buy: 2.5 at ask 2.5 (nbbo 2.45×2.5, 100ms old)",
+      "cold start: 0/5 baseline sessions; score uncertainty is wider"
+    ],
+    "feedId": "replay",
+    "seq": 3
+  },
+  {
+    "id": "ev_03cd31cccea9ba79",
+    "ts": 1787580360000,
+    "sessionDate": "2026-08-24",
+    "kind": "split",
+    "side": "buy",
+    "underlying": "NVDA",
+    "contract": "NVDA260918C00200000",
+    "expiry": "2026-09-18",
+    "strike": 200,
+    "right": "C",
+    "legs": [
+      {
+        "seq": 0,
+        "ts": 1787580000000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 30,
+        "exchange": "C",
+        "conditions": [
+          "regular"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787579999900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      },
+      {
+        "seq": 1,
+        "ts": 1787580120000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 30,
+        "exchange": "C",
+        "conditions": [
+          "regular"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787580119900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      },
+      {
+        "seq": 2,
+        "ts": 1787580240000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 30,
+        "exchange": "C",
+        "conditions": [
+          "regular"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787580239900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      },
+      {
+        "seq": 3,
+        "ts": 1787580360000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 30,
+        "exchange": "C",
+        "conditions": [
+          "regular"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787580359900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      }
+    ],
+    "legCount": 4,
+    "premium": 30000,
+    "size": 120,
+    "price": 2.5,
+    "dte": 25.246,
+    "otmPct": 0.0256,
+    "spot": 195,
+    "volOiRatio": 0.024,
+    "oi": 5000,
+    "exchanges": [
+      "C"
+    ],
+    "score": {
+      "total": 46.5,
+      "components": {
+        "volumeVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "dayVolume": 120,
+            "avgDailyVolume": null
+          },
+          "note": "no volume baseline for this contract yet"
+        },
+        "premiumVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "premium": 30000,
+            "samples": 4
+          },
+          "note": "premium distribution too thin (4/50 samples)"
+        },
+        "volOi": {
+          "value": 0.0147,
+          "weight": 0.15,
+          "weighted": 0.37,
+          "raw": {
+            "dayVolume": 120,
+            "oi": 5000,
+            "ratio": 0.024,
+            "capRatio": 4,
+            "openingFlowLikely": "no"
+          }
+        },
+        "aggression": {
+          "value": 0.7,
+          "weight": 0.2,
+          "weighted": 23.33,
+          "raw": {
+            "side": "buy",
+            "throughQuote": "no",
+            "kind": "split",
+            "isoCorroborated": "no"
+          }
+        },
+        "urgency": {
+          "value": 0.0403,
+          "weight": 0.1,
+          "weighted": 0.67,
+          "raw": {
+            "dte": 25.25,
+            "dteFactor": 0.08,
+            "otmPct": 0.0256,
+            "otmFactor": 0.171
+          }
+        },
+        "repetition": {
+          "value": 0.8856,
+          "weight": 0.15,
+          "weighted": 22.14,
+          "raw": {
+            "contractHits": 4,
+            "underlyingHits": 4,
+            "weightedHits": 6,
+            "capHits": 8
+          }
+        }
+      },
+      "missing": [
+        "volumeVsBaseline",
+        "premiumVsBaseline"
+      ],
+      "baselineDays": 0,
+      "coldStart": true
+    },
+    "reasons": [
+      "ladder: 4 same-side clips worked over 6m across 1 venue",
+      "cold start: 0/5 baseline sessions; score uncertainty is wider"
+    ],
+    "feedId": "replay",
+    "seq": 0
+  }
+]

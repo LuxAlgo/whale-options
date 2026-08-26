@@ -1,0 +1,30 @@
+# Daily feed-health canary for the thetadata adapter (the README badge reads
+# this workflow by filename). The canary script prints one line —
+# `PASS|SKIP|FAIL thetadata: ...` — and exits non-zero only on FAIL.
+#
+# ThetaData auth lives in a locally running Theta Terminal, so there is no
+# cloud credential to put in repo secrets: on GitHub-hosted runners this
+# canary always SKIPs (exit 0) and the badge stays green as "not exercised",
+# not "healthy". The workflow exists as the badge slot and becomes a real
+# check on a self-hosted runner with a terminal reachable at
+# THETADATA_BASE_URL (or when run locally via `pnpm canary:thetadata`).
+name: canary-thetadata
+
+on:
+  schedule:
+    - cron: "17 13 * * 1-5" # weekdays 13:17 UTC, staggered a few minutes per feed
+  workflow_dispatch:
+
+jobs:
+  canary:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @luxalgo/whale-core build
+      - run: pnpm canary:thetadata

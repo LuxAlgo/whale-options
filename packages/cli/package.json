@@ -1,0 +1,42 @@
+{
+  "name": "@luxalgo/whale-cli",
+  "version": "0.1.0",
+  "description": "CLI for the Whale Options flow engine: run against your own feed (or the built-in synthetic tape), replay the flight recorder, benchmark, manage alert rules, print GEX ladders.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuxAlgo/whale-options.git",
+    "directory": "packages/cli"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.10"
+  },
+  "bin": {
+    "whale": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@luxalgo/whale-core": "workspace:*",
+    "@luxalgo/whale-dashboard": "workspace:*",
+    "commander": "^13.0.0",
+    "jiti": "^2.4.0",
+    "picocolors": "^1.1.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

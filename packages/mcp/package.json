@@ -1,0 +1,40 @@
+{
+  "name": "@luxalgo/whale-mcp",
+  "version": "0.1.0",
+  "description": "MCP server for the Whale Options flow engine: give any agent eyes on your local options-flow flight recorder — recent flow, top-scored events with full breakdowns, single-event stories, GEX ladders, alert rules, and replay.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuxAlgo/whale-options.git",
+    "directory": "packages/mcp"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=20.10"
+  },
+  "bin": {
+    "whale-mcp": "./dist/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsup",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run --passWithNoTests"
+  },
+  "dependencies": {
+    "@luxalgo/whale-core": "workspace:*",
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "zod": "^3.24.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "tsup": "^8.3.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  }
+}

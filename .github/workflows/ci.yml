@@ -1,0 +1,29 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: node scripts/check-licenses.mjs
+      # cli/mcp typecheck against core's built d.ts — build first.
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      # Throughput regression gate. The floor is deliberately conservative
+      # for shared runners (the engine does ~40k ticks/sec on a dev machine):
+      # it catches order-of-magnitude regressions without flaking on runner
+      # variance.
+      - run: node packages/cli/dist/index.js bench --events 20000 --min-ticks-per-sec 3000 --json

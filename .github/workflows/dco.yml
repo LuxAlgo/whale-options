@@ -1,0 +1,30 @@
+# Developer Certificate of Origin: every PR commit must carry a Signed-off-by
+# trailer (git commit -s). See CONTRIBUTING.md.
+name: dco
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  signoff:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: verify Signed-off-by on every PR commit
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          missing=$(git log --no-merges --format='%H %(trailers:key=Signed-off-by,valueonly,separator=;)' "$BASE".."$HEAD" | awk 'NF==1 {print $1}')
+          if [ -n "$missing" ]; then
+            echo "Commits missing a Signed-off-by trailer (DCO):"
+            echo "$missing"
+            echo 'Fix with: git rebase --signoff, or amend each commit with git commit --amend -s'
+            exit 1
+          fi
+          echo "all commits carry Signed-off-by"

@@ -1,0 +1,4 @@
+# Licensing, trademark, and CI changes require LuxAlgo review.
+/LICENSE            @LuxAlgo/maintainers
+/TRADEMARKS.md      @LuxAlgo/maintainers
+/.github/workflows/ @LuxAlgo/maintainers

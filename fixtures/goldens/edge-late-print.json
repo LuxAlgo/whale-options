@@ -1,0 +1,272 @@
+[
+  {
+    "id": "ev_0f3d816770828454",
+    "ts": 1787580000000,
+    "sessionDate": "2026-08-24",
+    "kind": "block",
+    "side": "unknown",
+    "underlying": "NVDA",
+    "contract": "NVDA260918C00200000",
+    "expiry": "2026-09-18",
+    "strike": 200,
+    "right": "C",
+    "legs": [
+      {
+        "seq": 0,
+        "ts": 1787580000000,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 600,
+        "exchange": "C",
+        "conditions": [
+          "late"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787579999900
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      }
+    ],
+    "legCount": 1,
+    "premium": 150000,
+    "size": 600,
+    "price": 2.5,
+    "dte": 25.25,
+    "otmPct": 0.0256,
+    "spot": 195,
+    "volOiRatio": 0.12,
+    "oi": 5000,
+    "exchanges": [
+      "C"
+    ],
+    "score": {
+      "total": 2.4,
+      "components": {
+        "volumeVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "dayVolume": 600,
+            "avgDailyVolume": null
+          },
+          "note": "no volume baseline for this contract yet"
+        },
+        "premiumVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "premium": 150000,
+            "samples": 1
+          },
+          "note": "premium distribution too thin (1/50 samples)"
+        },
+        "volOi": {
+          "value": 0.0704,
+          "weight": 0.15,
+          "weighted": 1.76,
+          "raw": {
+            "dayVolume": 600,
+            "oi": 5000,
+            "ratio": 0.12,
+            "capRatio": 4,
+            "openingFlowLikely": "no"
+          }
+        },
+        "aggression": {
+          "value": 0,
+          "weight": 0.2,
+          "weighted": 0,
+          "raw": {
+            "side": "unknown",
+            "throughQuote": "no",
+            "kind": "block",
+            "isoCorroborated": "no"
+          },
+          "note": "aggressor side unknown"
+        },
+        "urgency": {
+          "value": 0.0402,
+          "weight": 0.1,
+          "weighted": 0.67,
+          "raw": {
+            "dte": 25.25,
+            "dteFactor": 0.08,
+            "otmPct": 0.0256,
+            "otmFactor": 0.171
+          }
+        },
+        "repetition": {
+          "value": 0,
+          "weight": 0.15,
+          "weighted": 0,
+          "raw": {
+            "contractHits": 0,
+            "underlyingHits": 0,
+            "weightedHits": 0,
+            "capHits": 8
+          }
+        }
+      },
+      "missing": [
+        "volumeVsBaseline",
+        "premiumVsBaseline"
+      ],
+      "baselineDays": 0,
+      "coldStart": true
+    },
+    "reasons": [
+      "block: size 600 ≥ threshold 100 (low bucket, bucket floor (size distribution still thin))",
+      "aggressor unknown: print-time NBBO not trustworthy for this sale condition",
+      "cold start: 0/5 baseline sessions; score uncertainty is wider"
+    ],
+    "feedId": "replay",
+    "seq": 0
+  },
+  {
+    "id": "ev_672fd02c2504c1a0",
+    "ts": 1787580000100,
+    "sessionDate": "2026-08-24",
+    "kind": "block",
+    "side": "unknown",
+    "underlying": "NVDA",
+    "contract": "NVDA260918C00200000",
+    "expiry": "2026-09-18",
+    "strike": 200,
+    "right": "C",
+    "legs": [
+      {
+        "seq": 1,
+        "ts": 1787580000100,
+        "underlying": "NVDA",
+        "contract": "NVDA260918C00200000",
+        "expiry": "2026-09-18",
+        "strike": 200,
+        "right": "C",
+        "price": 2.5,
+        "size": 600,
+        "exchange": "N",
+        "conditions": [
+          "late"
+        ],
+        "nbbo": {
+          "bid": 2.45,
+          "ask": 2.5,
+          "bidSize": 50,
+          "askSize": 80,
+          "ts": 1787580000000
+        },
+        "spot": 195,
+        "oi": 5000,
+        "feedId": "replay"
+      }
+    ],
+    "legCount": 1,
+    "premium": 150000,
+    "size": 600,
+    "price": 2.5,
+    "dte": 25.25,
+    "otmPct": 0.0256,
+    "spot": 195,
+    "volOiRatio": 0.24,
+    "oi": 5000,
+    "exchanges": [
+      "N"
+    ],
+    "score": {
+      "total": 4,
+      "components": {
+        "volumeVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "dayVolume": 1200,
+            "avgDailyVolume": null
+          },
+          "note": "no volume baseline for this contract yet"
+        },
+        "premiumVsBaseline": {
+          "value": null,
+          "weight": 0.2,
+          "weighted": null,
+          "raw": {
+            "premium": 150000,
+            "samples": 2
+          },
+          "note": "premium distribution too thin (2/50 samples)"
+        },
+        "volOi": {
+          "value": 0.1337,
+          "weight": 0.15,
+          "weighted": 3.34,
+          "raw": {
+            "dayVolume": 1200,
+            "oi": 5000,
+            "ratio": 0.24,
+            "capRatio": 4,
+            "openingFlowLikely": "no"
+          }
+        },
+        "aggression": {
+          "value": 0,
+          "weight": 0.2,
+          "weighted": 0,
+          "raw": {
+            "side": "unknown",
+            "throughQuote": "no",
+            "kind": "block",
+            "isoCorroborated": "no"
+          },
+          "note": "aggressor side unknown"
+        },
+        "urgency": {
+          "value": 0.0402,
+          "weight": 0.1,
+          "weighted": 0.67,
+          "raw": {
+            "dte": 25.25,
+            "dteFactor": 0.08,
+            "otmPct": 0.0256,
+            "otmFactor": 0.171
+          }
+        },
+        "repetition": {
+          "value": 0,
+          "weight": 0.15,
+          "weighted": 0,
+          "raw": {
+            "contractHits": 0,
+            "underlyingHits": 0,
+            "weightedHits": 0,
+            "capHits": 8
+          }
+        }
+      },
+      "missing": [
+        "volumeVsBaseline",
+        "premiumVsBaseline"
+      ],
+      "baselineDays": 0,
+      "coldStart": true
+    },
+    "reasons": [
+      "block: size 600 ≥ threshold 100 (low bucket, bucket floor (size distribution still thin))",
+      "aggressor unknown: print-time NBBO not trustworthy for this sale condition",
+      "cold start: 0/5 baseline sessions; score uncertainty is wider"
+    ],
+    "feedId": "replay",
+    "seq": 1
+  }
+]
