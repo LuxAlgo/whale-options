@@ -26,9 +26,7 @@
 
 <br>
 
-> **The flow platforms sell you a UI on a $40 data feed and call the detection "proprietary." Here's the detection.**
-
-**Whale Options** is an open-source options-flow engine. It connects to your own market-data feed, classifies every print (sweep, block, split), scores each event with a breakdown you can audit line by line, computes gamma exposure, fires alerts, and records everything in a replayable flight recorder. Self-hosted, agent-native, MIT.
+**Whale Options** is an options-flow engine that runs on your own machine. Point it at your market-data feed (or the built-in synthetic tape, no keys needed) and it watches every options trade as it prints, flags the ones that matter (sweeps, blocks, split orders), and scores each one with the math shown in full: every input, every weight, every missing piece reported. It also computes gamma exposure, fires alerts, serves a local dashboard, and records everything so any session can be replayed and audited.
 
 Options flow was never magic. Open the detection and it's just tape.
 
@@ -336,24 +334,11 @@ A thin local web UI: live flow table with filters, an event drawer showing the f
 - **No order execution.** The engine emits signals. The webhook `order-signal` template speaks the compact ticker/action format webhook-driven executors accept, and that is the entire relationship to execution.
 - **No advice, no win-rate claims, no "smart money" narratives.** Prints, classifications, and arithmetic, with the work shown.
 
-## The comparison
-
-The incumbent flow platforms charge a subscription for detection they will not show you. Whale Options is the detection, at the cost of your own feed.
-
-| Platform | Price | Detection |
-|---|---|---|
-| FlowAlgo | $149/mo ($99/mo billed annually) | closed |
-| CheddarFlow | $85 to $99/mo | closed |
-| Unusual Whales | ~$50/mo | closed |
-| **Whale Options** | **MIT + your feed at cost** | **open: every threshold in config, every score decomposed** |
-
-Prices as listed by the vendors at time of writing; verify current pricing.
-
-Whale Options is an independent open-source project by [LuxAlgo](https://luxalgo.com). It is not affiliated with, endorsed by, or derived from any commercial flow platform.
-
 ## Principles
 
 MIT licensed. **No telemetry**: the engine phones home to no one, ever. Self-host only. We don't want your keys, and we don't resell your feed. Every score shows its components; every classification shows its reasons; every assumption (sign conventions, thresholds, weights) is config with documented defaults. Servers bind loopback by default. Sample data in this repository is synthetic and labeled as such.
+
+Whale Options is an independent project by [LuxAlgo](https://luxalgo.com). It is not affiliated with, endorsed by, or derived from any commercial flow platform.
 
 ## Packages
 
