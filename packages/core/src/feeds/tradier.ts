@@ -199,6 +199,13 @@ interface TradierQuote {
   ask_date?: number | null;
 }
 
+/*
+  Underlying bars (getUnderlyingBars): not implemented in this pass. Tradier
+  documents equity intraday timesales (GET /v1/markets/timesales) and daily
+  history (GET /v1/markets/history), so an adapter method is possible; until
+  it is written and tested against vendor-shaped fixtures the API falls back
+  to the spot tape built from option prints and labels it as such.
+*/
 export class TradierFeed implements FeedAdapter {
   readonly id = "tradier" as const;
   private readonly accessToken: string;

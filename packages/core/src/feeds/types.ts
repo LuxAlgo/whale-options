@@ -35,6 +35,36 @@ export interface RawOptionTrade {
   oi?: number | null;
 }
 
+/** Equity bar resolutions an adapter may serve for the underlying. */
+export type BarTimeframe = "1m" | "5m" | "15m" | "1h" | "1d";
+
+export interface BarRange {
+  /** Inclusive start, epoch ms. */
+  from: number;
+  /** Inclusive end, epoch ms. */
+  to: number;
+}
+
+/** One underlying (stock/ETF) bar; `ts` is the bar's open time in epoch ms. */
+export interface UnderlyingBar {
+  ts: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  /** Share volume; null when the source has none (the synthetic walk, for one). */
+  volume: number | null;
+}
+
+/** Bars plus, in words, where they came from — surfaced verbatim in API payloads. */
+export interface UnderlyingBarsResult {
+  bars: UnderlyingBar[];
+  /** Short source label, e.g. "alpaca stock bars (feed=iex)". */
+  source: string;
+  /** What the bars are and are not (entitlement tier, adjustment, session coverage). */
+  note: string;
+}
+
 export interface TradeFilter {
   /** Per-underlying subscription filter — full-firehose days are heavy and
    *  the engine never assumes it sees the whole market. */
@@ -69,5 +99,18 @@ export interface FeedAdapter {
   ): AsyncIterable<RawOptionTrade>;
   /** End-of-session chain snapshot (OI/IV as of that date) for backfill. */
   getHistoricalChain?(underlying: string, dateIso: string): Promise<ChainSnapshot | null>;
+  /**
+   * Bars of the UNDERLYING (stock/ETF) at a timeframe over an inclusive
+   * range, for the chart's price pane. Optional: only vendors with an equity
+   * bar endpoint implement it (and only within the user's own entitlement);
+   * the API falls back to the spot tape built from option prints and says
+   * so. Return null (or an empty `bars`) when the range cannot be served —
+   * never a fabricated series.
+   */
+  getUnderlyingBars?(
+    symbol: string,
+    timeframe: BarTimeframe,
+    range: BarRange,
+  ): Promise<UnderlyingBarsResult | null>;
   close?(): Promise<void>;
 }

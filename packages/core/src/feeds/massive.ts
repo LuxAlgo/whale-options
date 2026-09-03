@@ -11,17 +11,29 @@
 
   REST: chain snapshot GET /v3/snapshot/options/{underlying} (limit ≤ 250,
   next_url pagination) carries greeks/IV/OI/last_quote per contract; single
-  contract GET /v3/snapshot/options/{u}/{O:occ} backs getNbbo. Auth is the
-  apiKey query param; responses carry {status, results, error, message}.
-  Sources: https://polygon.io/docs/websocket/options/trades,
-  https://polygon.io/docs/rest/options/snapshots/option-chain-snapshot
+  contract GET /v3/snapshot/options/{u}/{O:occ} backs getNbbo; stock
+  aggregates GET /v2/aggs/ticker/{symbol}/range/{mult}/{span}/{from}/{to}
+  back getUnderlyingBars (a stocks entitlement, separate from options). Auth
+  is the apiKey query param; responses carry {status, results, error,
+  message}. Sources: https://polygon.io/docs/websocket/options/trades,
+  https://polygon.io/docs/rest/options/snapshots/option-chain-snapshot,
+  https://polygon.io/docs/rest/stocks/aggregates/custom-bars
   (same pages under https://massive.com/docs/ post-rebrand).
 */
 import { WebSocket } from "ws";
 import { parseOcc } from "../occ.js";
 import type { ChainContract, ChainSnapshot, Nbbo, NormalizedCondition } from "../types.js";
 import { AsyncQueue, backoffMs, FeedAuthError, fetchJson, sleep } from "./feed-util.js";
-import type { FeedAdapter, FeedCapabilities, RawOptionTrade, TradeFilter } from "./types.js";
+import type {
+  BarRange,
+  BarTimeframe,
+  FeedAdapter,
+  FeedCapabilities,
+  RawOptionTrade,
+  TradeFilter,
+  UnderlyingBar,
+  UnderlyingBarsResult,
+} from "./types.js";
 
 export interface MassiveOptions {
   apiKey: string;
@@ -251,6 +263,44 @@ export function mapMassiveChainContract(row: MassiveChainResult): ChainContract 
   };
 }
 
+/** One row of GET /v2/aggs/ticker/{symbol}/range/... (`results: [...]`).
+ *  Keys per the aggregates docs and the SDK model (massive/rest/models/
+ *  aggs.py, Agg): t (window start, unix ms), o/h/l/c, v (volume), vw (VWAP),
+ *  n (transactions). */
+export interface MassiveAggregate {
+  t?: number;
+  o?: number;
+  h?: number;
+  l?: number;
+  c?: number;
+  v?: number;
+  vw?: number;
+  n?: number;
+}
+
+/** Vela/whale timeframe → the aggregates path's {multiplier}/{timespan}. */
+export const MASSIVE_BAR_RANGES: Record<BarTimeframe, { multiplier: number; timespan: string }> = {
+  "1m": { multiplier: 1, timespan: "minute" },
+  "5m": { multiplier: 5, timespan: "minute" },
+  "15m": { multiplier: 15, timespan: "minute" },
+  "1h": { multiplier: 1, timespan: "hour" },
+  "1d": { multiplier: 1, timespan: "day" },
+};
+
+/** Pure mapper: one aggregate row → UnderlyingBar (null = unusable). */
+export function mapMassiveAggregate(row: MassiveAggregate): UnderlyingBar | null {
+  if (
+    row.t === undefined ||
+    row.o === undefined ||
+    row.h === undefined ||
+    row.l === undefined ||
+    row.c === undefined
+  ) {
+    return null;
+  }
+  return { ts: row.t, open: row.o, high: row.h, low: row.l, close: row.c, volume: row.v ?? null };
+}
+
 export class MassiveFeed implements FeedAdapter {
   readonly id = "massive" as const;
   private readonly apiKey: string;
@@ -409,6 +459,44 @@ export class MassiveFeed implements FeedAdapter {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Stock aggregates via GET /v2/aggs/ticker/{symbol}/range/{mult}/{span}/
+   * {from}/{to}?adjusted=true&sort=asc&limit=50000 (from/to accept unix ms;
+   * next_url pagination). Needs a stocks entitlement — an options-only key
+   * gets 403 and this returns null so the API falls back to the spot tape.
+   */
+  async getUnderlyingBars(
+    symbol: string,
+    timeframe: BarTimeframe,
+    range: BarRange,
+  ): Promise<UnderlyingBarsResult | null> {
+    const { multiplier, timespan } = MASSIVE_BAR_RANGES[timeframe];
+    const bars: UnderlyingBar[] = [];
+    let url: string | null = this.withKey(
+      `${this.restBase}/v2/aggs/ticker/${symbol.toUpperCase()}/range/${multiplier}/${timespan}/${Math.floor(range.from)}/${Math.ceil(range.to)}?adjusted=true&sort=asc&limit=50000`,
+    );
+    let pages = 0;
+    try {
+      while (url && pages < 20) {
+        pages++;
+        const res: MassiveEnvelope<MassiveAggregate[]> =
+          await fetchJson<MassiveEnvelope<MassiveAggregate[]>>(url);
+        for (const row of res.results ?? []) {
+          const bar = mapMassiveAggregate(row);
+          if (bar) bars.push(bar);
+        }
+        url = res.next_url ? this.withKey(res.next_url) : null;
+      }
+    } catch {
+      return null;
+    }
+    return {
+      bars,
+      source: "massive stock aggregates (adjusted=true)",
+      note: "bars from Massive's stock aggregates endpoint: consolidated SIP bars, split-adjusted (adjusted=true); delayed on the entry stocks tier, real-time on advanced",
+    };
   }
 
   /** All contract tickers listed on the underlying as of a date — both the

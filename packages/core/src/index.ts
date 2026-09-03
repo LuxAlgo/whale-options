@@ -37,6 +37,7 @@ export * from "./context/index.js";
 // Engine
 export { Engine } from "./engine.js";
 export { AlpacaFeed, type AlpacaOptions } from "./feeds/alpaca.js";
+export { BAR_TIMEFRAME_MS, parseBarTimeframe } from "./feeds/bars.js";
 export { MassiveFeed, type MassiveOptions } from "./feeds/massive.js";
 export { createFeed, type FeedFactory, registeredFeeds, registerFeed } from "./feeds/registry.js";
 export { ReplayFeed, type TapeRow, TapeWriter } from "./feeds/replay.js";
@@ -49,7 +50,16 @@ export {
 export { ThetadataFeed, type ThetadataOptions } from "./feeds/thetadata.js";
 export { TradierFeed, type TradierOptions } from "./feeds/tradier.js";
 // Feeds
-export type { FeedAdapter, FeedCapabilities, RawOptionTrade, TradeFilter } from "./feeds/types.js";
+export type {
+  BarRange,
+  BarTimeframe,
+  FeedAdapter,
+  FeedCapabilities,
+  RawOptionTrade,
+  TradeFilter,
+  UnderlyingBar,
+  UnderlyingBarsResult,
+} from "./feeds/types.js";
 // Per-print flow series (the chart's data spine)
 export * from "./flow/index.js";
 // Greeks & GEX

@@ -15,8 +15,10 @@
 
   REST (https://data.alpaca.markets): option chain snapshots with greeks/IV
   at /v1beta1/options/snapshots/{underlying} (no open interest — oi stays
-  null), latest option quote for getNbbo, and the free IEX stock quote for
-  getSpot. Auth: APCA-API-KEY-ID / APCA-API-SECRET-KEY headers.
+  null), latest option quote for getNbbo, the free IEX stock quote for
+  getSpot, and stock bars at /v2/stocks/{symbol}/bars for getUnderlyingBars
+  (feed=iex on the free tier; SIP needs the paid data subscription). Auth:
+  APCA-API-KEY-ID / APCA-API-SECRET-KEY headers.
 */
 import { WebSocket } from "ws";
 import { parseOcc } from "../occ.js";
@@ -24,7 +26,16 @@ import type { ChainContract, ChainSnapshot, Nbbo, NormalizedCondition } from "..
 import { easternTimeToUtc } from "../util/session.js";
 import { AsyncQueue, backoffMs, FeedAuthError, fetchJson, sleep } from "./feed-util.js";
 import { type MsgpackValue, msgpackDecode, msgpackEncode } from "./msgpack.js";
-import type { FeedAdapter, FeedCapabilities, RawOptionTrade, TradeFilter } from "./types.js";
+import type {
+  BarRange,
+  BarTimeframe,
+  FeedAdapter,
+  FeedCapabilities,
+  RawOptionTrade,
+  TradeFilter,
+  UnderlyingBar,
+  UnderlyingBarsResult,
+} from "./types.js";
 
 export interface AlpacaOptions {
   keyId: string;
@@ -214,6 +225,47 @@ export function mapAlpacaHistoricalTrade(
     nbbo: null,
     spot: null,
     oi: null,
+  };
+}
+
+/** One row of GET /v2/stocks/{symbol}/bars (`bars: [...]`). Keys per the
+ *  stock bars reference (https://docs.alpaca.markets/reference/stockbars-1)
+ *  and alpaca-py's models/bars.py: t (RFC3339 open time), o/h/l/c, v (volume),
+ *  n (trade count), vw (VWAP). */
+export interface AlpacaBar {
+  t?: string | number;
+  o?: number;
+  h?: number;
+  l?: number;
+  c?: number;
+  v?: number;
+  n?: number;
+  vw?: number;
+}
+
+/** Vela/whale timeframe → Alpaca's `timeframe` query value. */
+export const ALPACA_BAR_TIMEFRAMES: Record<BarTimeframe, string> = {
+  "1m": "1Min",
+  "5m": "5Min",
+  "15m": "15Min",
+  "1h": "1Hour",
+  "1d": "1Day",
+};
+
+/** Pure mapper: one stock bar row → UnderlyingBar (null = unusable). */
+export function mapAlpacaBar(row: AlpacaBar): UnderlyingBar | null {
+  const ts = toEpochMs(row.t);
+  if (!Number.isFinite(ts)) return null;
+  if (row.o === undefined || row.h === undefined || row.l === undefined || row.c === undefined) {
+    return null;
+  }
+  return {
+    ts,
+    open: row.o,
+    high: row.h,
+    low: row.l,
+    close: row.c,
+    volume: row.v ?? null,
   };
 }
 
@@ -408,6 +460,56 @@ export class AlpacaFeed implements FeedAdapter {
     } catch {
       return null;
     }
+  }
+
+  /**
+   * Stock bars via GET /v2/stocks/{symbol}/bars?timeframe&start&end&limit&
+   * feed=iex&adjustment=raw&sort=asc (page_token pagination). IEX is the
+   * free tier's consolidated-ish view (one venue), so bars are what IEX saw,
+   * not the SIP tape — the note says so. Any failure (no entitlement, bad
+   * symbol) returns null and the API falls back to the spot tape.
+   */
+  async getUnderlyingBars(
+    symbol: string,
+    timeframe: BarTimeframe,
+    range: BarRange,
+  ): Promise<UnderlyingBarsResult | null> {
+    const ticker = symbol.toUpperCase();
+    const bars: UnderlyingBar[] = [];
+    let pageToken: string | null = null;
+    let pages = 0;
+    try {
+      do {
+        pages++;
+        const params = new URLSearchParams({
+          timeframe: ALPACA_BAR_TIMEFRAMES[timeframe],
+          start: new Date(range.from).toISOString(),
+          end: new Date(range.to).toISOString(),
+          limit: "10000",
+          feed: "iex",
+          adjustment: "raw",
+          sort: "asc",
+        });
+        if (pageToken) params.set("page_token", pageToken);
+        const url = `${this.dataBase}/v2/stocks/${ticker}/bars?${params}`;
+        const res = await fetchJson<{ bars?: AlpacaBar[] | null; next_page_token?: string | null }>(
+          url,
+          { headers: this.headers() },
+        );
+        for (const row of res.bars ?? []) {
+          const bar = mapAlpacaBar(row);
+          if (bar) bars.push(bar);
+        }
+        pageToken = res.next_page_token ?? null;
+      } while (pageToken && pages < 20);
+    } catch {
+      return null;
+    }
+    return {
+      bars,
+      source: "alpaca stock bars (feed=iex)",
+      note: "bars from Alpaca's stock bars endpoint on the IEX feed (the free tier): IEX's own prints and volume, not the consolidated SIP tape; unadjusted (adjustment=raw)",
+    };
   }
 
   /** Contract symbols currently listed on an underlying, via the snapshots

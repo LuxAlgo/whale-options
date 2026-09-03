@@ -22,7 +22,17 @@ import {
   randNormal,
 } from "../util/prng.js";
 import { easternTimeToUtc, sessionDateOf } from "../util/session.js";
-import type { FeedAdapter, FeedCapabilities, RawOptionTrade, TradeFilter } from "./types.js";
+import { BAR_TIMEFRAME_MS } from "./bars.js";
+import type {
+  BarRange,
+  BarTimeframe,
+  FeedAdapter,
+  FeedCapabilities,
+  RawOptionTrade,
+  TradeFilter,
+  UnderlyingBar,
+  UnderlyingBarsResult,
+} from "./types.js";
 
 export interface SyntheticUnderlying {
   symbol: string;
@@ -69,6 +79,13 @@ interface SynthContract {
   iv: number;
 }
 
+interface SpotMinute {
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+}
+
 interface UnderlyingState {
   def: SyntheticUnderlying;
   spot: number;
@@ -76,6 +93,9 @@ interface UnderlyingState {
   contracts: SynthContract[];
   /** Cumulative OI-based pick weights, biased toward near-ATM short-dated. */
   weights: number[];
+  /** The spot walk folded into 1-minute bars (minute start ms → OHLC) — what
+   *  getUnderlyingBars serves, so the demo's candles ARE the path the prints rode on. */
+  spotMinutes: Map<number, SpotMinute>;
 }
 
 interface ScheduledPrint {
@@ -222,7 +242,16 @@ export class SyntheticFeed implements FeedAdapter {
       const dteDays = Math.max(0.5, (c.expiryTs - this.startTs) / 86_400_000);
       return (c.oi + 1) * (1 / Math.sqrt(dteDays));
     });
-    return { def, spot: def.spot, lastMoveTs: this.startTs, contracts, weights };
+    const state: UnderlyingState = {
+      def,
+      spot: def.spot,
+      lastMoveTs: this.startTs,
+      contracts,
+      weights,
+      spotMinutes: new Map(),
+    };
+    this.recordSpot(state, this.startTs);
+    return state;
   }
 
   private advanceSpot(u: UnderlyingState, ts: number): void {
@@ -234,6 +263,21 @@ export class SyntheticFeed implements FeedAdapter {
       (this.opts.regime === "earnings-ramp" && u.def.symbol === this.rampTarget ? 1.6 : 1);
     u.spot *= Math.exp(-0.5 * vol * vol * dt + vol * Math.sqrt(dt) * randNormal(this.rng));
     u.lastMoveTs = ts;
+    this.recordSpot(u, ts);
+  }
+
+  /** Fold the current spot into its 1-minute bar (rounded like tick.spot, to cents). */
+  private recordSpot(u: UnderlyingState, ts: number): void {
+    const minute = Math.floor(ts / 60_000) * 60_000;
+    const spot = Math.round(u.spot * 100) / 100;
+    const bar = u.spotMinutes.get(minute);
+    if (!bar) {
+      u.spotMinutes.set(minute, { open: spot, high: spot, low: spot, close: spot });
+      return;
+    }
+    bar.high = Math.max(bar.high, spot);
+    bar.low = Math.min(bar.low, spot);
+    bar.close = spot;
   }
 
   private nbboFor(u: UnderlyingState, c: SynthContract, ts: number): Nbbo {
@@ -295,6 +339,9 @@ export class SyntheticFeed implements FeedAdapter {
     through = false,
   ): RawOptionTrade {
     this.advanceSpot(u, ts);
+    // Every print observes the spot it rides on, moved or not — so the bar
+    // series and the spot tape from prints describe the same path.
+    this.recordSpot(u, ts);
     const nbbo = this.nbboFor(u, c, ts);
     let price: number;
     if (side === "buy") price = through ? Math.round((nbbo.ask + 0.01) * 100) / 100 : nbbo.ask;
@@ -522,6 +569,43 @@ export class SyntheticFeed implements FeedAdapter {
     if (!u) return null;
     this.advanceSpot(u, this.currentTs);
     return Math.round(u.spot * 100) / 100;
+  }
+
+  /**
+   * Bars of the seeded spot random walk — the same path the prints' `spot`
+   * rides on — folded to the requested timeframe over [from, to]. No share
+   * volume exists in a synthetic walk, so `volume` is null. Only minutes the
+   * walk has actually stepped through exist: a range before this feed's start
+   * yields no bars (and the API then says so and falls back to the spot tape).
+   */
+  async getUnderlyingBars(
+    symbol: string,
+    timeframe: BarTimeframe,
+    range: BarRange,
+  ): Promise<UnderlyingBarsResult | null> {
+    const u = this.universe.get(symbol.toUpperCase());
+    if (!u) return null;
+    const tfMs = BAR_TIMEFRAME_MS[timeframe];
+    const bars: UnderlyingBar[] = [];
+    const minutes = [...u.spotMinutes.entries()]
+      .filter(([ts]) => ts >= range.from && ts <= range.to)
+      .sort((a, b) => a[0] - b[0]);
+    for (const [minute, m] of minutes) {
+      const ts = Math.floor(minute / tfMs) * tfMs;
+      const last = bars[bars.length - 1];
+      if (last && last.ts === ts) {
+        last.high = Math.max(last.high, m.high);
+        last.low = Math.min(last.low, m.low);
+        last.close = m.close;
+      } else {
+        bars.push({ ts, open: m.open, high: m.high, low: m.low, close: m.close, volume: null });
+      }
+    }
+    return {
+      bars,
+      source: "synthetic feed spot random walk",
+      note: "bars are the synthetic feed's own seeded GBM spot path — the same path the option prints' spot rides on — folded to the timeframe; not exchange data, and no share volume exists (volume is null)",
+    };
   }
 
   /**

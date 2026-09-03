@@ -95,6 +95,7 @@ export function registerRun(program: Command): void {
           store,
           config,
           staticDir,
+          adapter,
           statusExtras: () => ({
             feed: config.feed.id,
             universe: config.universe.underlyings,
