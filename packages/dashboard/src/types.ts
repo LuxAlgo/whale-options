@@ -97,6 +97,7 @@ export interface GexLadder {
   spot: number;
   convention: string;
   conventionNote: string;
+  pricing: GexPricing;
   expiriesIncluded: string[];
   perStrike: Array<{
     strike: number;
@@ -270,3 +271,118 @@ export interface EngineStatus {
   universe?: string[];
   configPath?: string | null;
 }
+
+/** One clock bucket of the per-print flow series (GET /api/flow/:underlying/series, /ws "flow"). */
+export interface FlowBucket {
+  underlying: string;
+  sessionDate: string;
+  bucketMs: number;
+  ts: number;
+  prints: number;
+  cancels: number;
+  sided: number;
+  unsided: number;
+  buyVolume: number;
+  sellVolume: number;
+  callPremiumBuy: number;
+  callPremiumSell: number;
+  putPremiumBuy: number;
+  putPremiumSell: number;
+  directionalDelta: number;
+  deltaFromChain: number;
+  deltaFromBlackScholes: number;
+  deltaMissing: number;
+  spotOpen: number | null;
+  spotHigh: number | null;
+  spotLow: number | null;
+  spotClose: number | null;
+  spotObservations: number;
+}
+
+export interface FlowSeriesPayload {
+  underlying: string;
+  sessionDate: string;
+  bucketMs: number;
+  buckets: Array<
+    FlowBucket & {
+      callNet: number;
+      putNet: number;
+      netPremium: number;
+      netVolume: number;
+      cumCallNet: number;
+      cumPutNet: number;
+      cumNetPremium: number;
+      cumDirectionalDelta: number;
+      cumNetVolume: number;
+    }
+  >;
+  totals: Record<string, number>;
+  deltaSource: string;
+  note: string;
+}
+
+/** GET /api/flow/sessions — what the date picker offers. */
+export interface FlowSessions {
+  sessions: string[];
+  today: string;
+  underlyings: string[];
+  note: string;
+}
+
+/** GET /api/bars/:underlying — feed bars or the spot tape, source always stated. */
+export interface UnderlyingBar {
+  ts: number;
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number | null;
+}
+
+export interface BarsPayload {
+  underlying: string;
+  timeframe: string;
+  timeframeMs: number;
+  from: number;
+  to: number;
+  source: string;
+  sourceKind: "feed" | "spot-tape";
+  feed: string | null;
+  bars: UnderlyingBar[];
+  note: string;
+}
+
+/** Where a GEX evaluation's spot came from (chain snapshot vs live re-pricing). */
+export interface GexPricing {
+  chainTs: number;
+  spot: number;
+  spotSource: "chain-snapshot" | "override";
+  repricedTs: number | null;
+  note: string;
+}
+
+/** GET /api/gex/:underlying/heatmap — strike × expiry net GEX grid. */
+export interface GexHeatmap {
+  underlying: string;
+  ts: number;
+  spot: number;
+  convention: string;
+  conventionNote: string;
+  pricing: GexPricing;
+  expiries: string[];
+  strikes: number[];
+  cells: number[][];
+  strikeTotals: number[];
+  expiryTotals: number[];
+  totalGex: number;
+  spotRowIndex: number | null;
+  zeroGamma: { level: number; method: string } | null;
+  strikesOmitted: number;
+  skippedContracts: number;
+  note: string;
+}
+
+/** /ws frames: classified events (existing) and per-print flow buckets. */
+export type LiveMessage =
+  | { type: "event"; event: FlowEvent }
+  | { type: "flow"; buckets: FlowBucket[] };

@@ -1,7 +1,7 @@
 {
   "name": "@luxalgo/whale-dashboard",
   "version": "0.1.0",
-  "description": "Minimal local dashboard for the Whale Options flow engine: live flow table with filters, event detail drawer with the full score breakdown, GEX ladder. Thin by design — the engine is the product.",
+  "description": "Minimal local dashboard for the Whale Options flow engine: live flow table with filters, event detail drawer with the full score breakdown, a Vela chart of the tape (candles, per-print flow panes, event markers, GEX levels), GEX ladder and heatmap. Thin by design — the engine is the product.",
   "license": "MIT",
   "repository": {
     "type": "git",
