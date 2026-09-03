@@ -10,6 +10,7 @@ import {
   Engine,
   easternTimeToUtc,
   type FlowEvent,
+  FlowSeriesAggregator,
   normalizeTrade,
   type OptionTradeTick,
   resolveConfig,
@@ -21,6 +22,7 @@ import {
 import { Client } from "@modelcontextprotocol/sdk/client/index.js";
 import { InMemoryTransport } from "@modelcontextprotocol/sdk/inMemory.js";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { registerChartTools } from "../src/tools/chart.js";
 import { registerWhaleTools } from "../src/tools.js";
 
 export const START = easternTimeToUtc("2026-08-24", 9, 30);
@@ -64,6 +66,15 @@ export async function seedStore(
   store.insertEvents(events);
   const chain = await feed.getChainSnapshot("NVDA");
   if (chain) store.upsertChainSnapshot(chain);
+  // The per-print flow series the runner would have persisted alongside.
+  const flow = new FlowSeriesAggregator({
+    bucketMs: config.flowSeries.bucketMs,
+    nbboStaleMs: config.engine.nbboStaleMs,
+    r: config.greeks.r,
+    q: config.greeks.q,
+  });
+  for (const t of ticks) flow.push(t);
+  store.upsertFlowBuckets(flow.drainDirty());
 
   return { store, config, ticks, events };
 }
@@ -78,9 +89,11 @@ export interface Connected {
 export async function connect(
   store: SqliteFlightRecorder,
   config: WhaleConfig,
+  opts: { chartTools?: boolean } = {},
 ): Promise<Connected> {
   const server = new McpServer({ name: "whale-options", version: "test" });
   registerWhaleTools(server, { store, config });
+  if (opts.chartTools) registerChartTools(server, { store, config });
   const [clientTransport, serverTransport] = InMemoryTransport.createLinkedPair();
   const client = new Client({ name: "whale-mcp-tests", version: "0.0.0" });
   await Promise.all([server.connect(serverTransport), client.connect(clientTransport)]);

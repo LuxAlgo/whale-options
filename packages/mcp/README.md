@@ -33,8 +33,8 @@ Precedence: `--db` > `--config <file>` > `./whale.config.json` > built-in defaul
 
 The CLI loads `whale.config.{ts,js}` through jiti; this package stays dependency-light and does not. A `whale.config.ts` is **not** read by whale-mcp; pass `--db` pointing at the same `store.path`, or mirror the settings into `whale.config.json`. If a TS/JS config exists and no JSON one does, whale-mcp says so on stderr instead of silently running on defaults.
 
-## The thirteen tools
+## The sixteen tools
 
-`whale_status` · `whale_recent` · `whale_top` · `whale_event` · `whale_gex` · `whale_rules` · `whale_replay` · `whale_oi_deltas` · `whale_max_pain` · `whale_iv_rank` · `whale_net_flow` · `whale_audit` · `whale_short_volume`
+`whale_status` · `whale_recent` · `whale_top` · `whale_event` · `whale_gex` · `whale_rules` · `whale_replay` · `whale_oi_deltas` · `whale_max_pain` · `whale_iv_rank` · `whale_net_flow` · `whale_audit` · `whale_short_volume` · `whale_flow_series` · `whale_bars` · `whale_gex_heatmap`
 
 Every score ships with its six-component breakdown and raw inputs; transparency is the product. Full client setup (Claude Code, Claude Desktop, generic clients), a tool-by-tool reference with example calls, and a demo walkthrough: [docs/mcp.md](https://github.com/LuxAlgo/whale-options/blob/main/docs/mcp.md).
