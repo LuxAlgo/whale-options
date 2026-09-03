@@ -361,6 +361,12 @@ function rowOcc(row: {
   }
 }
 
+/*
+  Underlying bars (getUnderlyingBars): not implemented. The terminal's v3
+  stock-history endpoints are entitlement-gated separately from options and
+  their exact paths are unverified here, so nothing is guessed at: the API
+  falls back to the spot tape built from option prints and labels it as such.
+*/
 export class ThetadataFeed implements FeedAdapter {
   readonly id = "thetadata" as const;
   private readonly baseUrl: string;

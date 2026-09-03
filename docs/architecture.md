@@ -29,7 +29,7 @@ feed adapter (vendor I/O)          @luxalgo/whale-core
                     └──────────────┴──────────────────┴──────────────┘
 ```
 
-The analytics modules (`backfill/`, `audit/`, `market/`, `context/`, `compare/`) sit entirely on the flight-recorder side of this diagram: they read (and, for backfill and context, write) the store's baseline, daily-history, and event tables, and never touch the pure engine — the engine stays a function of the tape, and everything downstream is arithmetic over what it recorded.
+The analytics modules (`backfill/`, `audit/`, `market/`, `context/`, `compare/`, `flow/`) sit entirely on the flight-recorder side of this diagram: they read (and, for backfill and context, write) the store's baseline, daily-history, and event tables, and never touch the pure engine — the engine stays a function of the tape, and everything downstream is arithmetic over what it recorded.
 
 ## The tick is the unit of record
 
@@ -63,12 +63,13 @@ Live vs replay caveat (documented, inherent): a live feed that delivers prints f
 | `config.ts` | Zod schema; every threshold and weight, defaulted and documented |
 | `occ.ts` | OCC/OSI symbology (parses vendor variants, emits canonical) |
 | `conditions.ts` | Normalized sale-condition vocabulary + the policy table (score/sweep/block/volume eligibility per condition) |
-| `feeds/` | `FeedAdapter` interface, registry, synthetic generator, tape replay/writer |
+| `feeds/` | `FeedAdapter` interface (trades, chains, optional underlying bars), registry, synthetic generator, tape replay/writer |
 | `normalize/` | Raw vendor print → canonical tick (exactly once) |
 | `classify/` | Aggressor inference; sweep/block/ladder state machine; cancel handling |
 | `score/` | Rolling baselines (20-session volume, premium and size histograms) + the six-component whale score |
-| `greeks/` | Black-Scholes (with dividend yield), Brent IV solve, GEX ladder + zero-gamma scan |
+| `greeks/` | Black-Scholes (with dividend yield), Brent IV solve, GEX ladder + zero-gamma scan (re-priceable at a live spot, provenance stated), strike × expiry GEX heatmap |
 | `alerts/` | Rule matching, sinks (stdout/webhook/discord/telegram/desktop), queued dispatcher with retries |
+| `flow/` | Per-print flow series: every normalized tick bucketed per underlying and session into signed premium, directional delta, net volume, and the spot tape from prints — driven by the runner, persisted by the store, replay-identical; the note states what is and is not included |
 | `store/` | `FlightRecorder` interface; SQLite (default) and in-memory implementations |
 | `backfill/` | Historical ingestion: replays a vendor's past sessions through the same normalize/accumulate path to warm baselines and daily OI/IV history — no events, no alerts |
 | `audit/` | Score calibration vs forward underlying moves, computed over the store — caveats are part of the report |

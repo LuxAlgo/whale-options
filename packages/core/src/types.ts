@@ -190,6 +190,24 @@ export interface ChainSnapshot {
   contracts: ChainContract[];
 }
 
+/**
+ * Where a GEX evaluation's spot came from. Chains are snapshots; the ladder
+ * can be re-priced at a fresher spot without refetching the chain, and the
+ * output says so instead of passing off old OI at a new price as a new chain.
+ */
+export interface GexPricing {
+  /** When the chain (OI, IV, greeks) was snapshotted (epoch ms). */
+  chainTs: number;
+  /** The spot every gamma was evaluated at. */
+  spot: number;
+  /** "chain-snapshot": the snapshot's own spot; "override": a caller-supplied (live) spot. */
+  spotSource: "chain-snapshot" | "override";
+  /** When the override spot was observed (epoch ms); null for the snapshot's own spot. */
+  repricedTs: number | null;
+  /** "chain as of <iso>, re-priced at spot <x> at <iso>" — or the snapshot's own pricing. */
+  note: string;
+}
+
 /** Per-strike gamma-exposure ladder plus the interpolated zero-gamma level. */
 export interface GexLadder {
   underlying: string;
@@ -198,6 +216,7 @@ export interface GexLadder {
   /** Which sign convention produced these numbers — always stated in output. */
   convention: string;
   conventionNote: string;
+  pricing: GexPricing;
   expiriesIncluded: string[];
   perStrike: Array<{
     strike: number;
@@ -211,6 +230,40 @@ export interface GexLadder {
   zeroGamma: { level: number; method: string } | null;
   /** Contracts skipped because no gamma could be derived (no greeks, unsolvable IV). */
   skippedContracts: number;
+}
+
+/**
+ * Strike-by-expiry GEX grid: rows are strikes around spot, columns are the
+ * chain's expiries, cells are net dollar gamma per 1% move under the stated
+ * convention. Row totals are the all-expiry ladder restricted to those
+ * strikes; column totals are each expiry's whole ladder.
+ */
+export interface GexHeatmap {
+  underlying: string;
+  ts: number;
+  spot: number;
+  convention: string;
+  conventionNote: string;
+  pricing: GexPricing;
+  /** Columns, ascending ISO dates. */
+  expiries: string[];
+  /** Rows, ascending strikes — the `rows` nearest to spot with any usable gamma. */
+  strikes: number[];
+  /** cells[strikeIndex][expiryIndex] = net GEX per 1% move (0 when the expiry has no OI there). */
+  cells: number[][];
+  /** Per-strike net GEX across ALL expiries (the ladder row), aligned with `strikes`. */
+  strikeTotals: number[];
+  /** Per-expiry total net GEX over the expiry's WHOLE ladder (all its strikes). */
+  expiryTotals: number[];
+  /** All expiries, all strikes. */
+  totalGex: number;
+  /** Row index whose strike is nearest to spot (the highlighted row); null when no rows. */
+  spotRowIndex: number | null;
+  zeroGamma: { level: number; method: string } | null;
+  /** Strikes with usable gamma that fell outside the `rows` window (not shown). */
+  strikesOmitted: number;
+  skippedContracts: number;
+  note: string;
 }
 
 /** A fired alert, persisted so any alert can be traced back to its event. */

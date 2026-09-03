@@ -1,13 +1,16 @@
 /*
   Dashboard shell. Deliberately thin: a live flow table with filters, an
-  event drawer showing the full score breakdown, the GEX ladder, the market
-  structure analytics, score calibration (audit), and recorded-tape playback
-  — the engine is the product, this is a window onto it. Visited tabs stay
+  event drawer showing the full score breakdown, the chart (candles, the
+  per-print flow panes, event markers, GEX levels — drawn by Vela, loaded on
+  first visit), the GEX ladder and heatmap, the market structure analytics,
+  score calibration (audit), and recorded-tape playback — the engine is the
+  product, this is a window onto it. Visited tabs stay
   mounted (hidden, not unmounted) so streams, fetched panels, and playback
   position survive tab switches.
 */
 import { useState } from "react";
 import { AuditView } from "./audit-view.js";
+import { ChartView } from "./chart-view.js";
 import { FlowView } from "./flow-view.js";
 import { int } from "./format.js";
 import { GexView } from "./gex-view.js";
@@ -16,13 +19,14 @@ import { MarketView } from "./market-view.js";
 import { PlaybackView } from "./playback-view.js";
 import { useStatus } from "./use-status.js";
 
-type Tab = "flow" | "gex" | "market" | "audit" | "playback";
+type Tab = "flow" | "chart" | "gex" | "market" | "audit" | "playback";
 
 export function App() {
   const { status, reachable, live, error } = useStatus();
   const [tab, setTab] = useState<Tab>("flow");
   const [visited, setVisited] = useState<Record<Tab, boolean>>({
     flow: true,
+    chart: false,
     gex: false,
     market: false,
     audit: false,
@@ -72,8 +76,11 @@ export function App() {
         <TabButton active={tab === "flow"} onClick={() => pick("flow")}>
           flow
         </TabButton>
+        <TabButton active={tab === "chart"} onClick={() => pick("chart")}>
+          chart
+        </TabButton>
         <TabButton active={tab === "gex"} onClick={() => pick("gex")}>
-          gex ladder
+          gex
         </TabButton>
         <TabButton active={tab === "market"} onClick={() => pick("market")}>
           market
@@ -98,9 +105,14 @@ export function App() {
         <div className={tab === "flow" ? "min-h-0 flex-1" : "hidden"}>
           <FlowView engineReachable={reachable} />
         </div>
+        {visited.chart && (
+          <div className={tab === "chart" ? "min-h-0 flex-1" : "hidden"}>
+            <ChartView status={status} active={tab === "chart"} />
+          </div>
+        )}
         {visited.gex && (
           <div className={tab === "gex" ? "min-h-0 flex-1 overflow-y-auto" : "hidden"}>
-            <GexView chains={status?.chains_available ?? []} />
+            <GexView chains={status?.chains_available ?? []} active={tab === "gex"} />
           </div>
         )}
         {visited.market && (

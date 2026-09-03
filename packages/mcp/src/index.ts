@@ -33,6 +33,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { MCP_PATH, startHttpServer } from "./http.js";
 import { registerAuditTools } from "./tools/audit.js";
+import { registerChartTools } from "./tools/chart.js";
 import { registerContextTools } from "./tools/context.js";
 import { registerMarketTools } from "./tools/market.js";
 import { registerWhaleTools } from "./tools.js";
@@ -184,6 +185,7 @@ function buildServer(): McpServer {
   registerMarketTools(server, { store, config });
   registerAuditTools(server, { store, config });
   registerContextTools(server, { store, config });
+  registerChartTools(server, { store, config });
   return server;
 }
 

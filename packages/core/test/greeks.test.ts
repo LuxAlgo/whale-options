@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { blackScholes, normCdf } from "../src/greeks/black-scholes.js";
 import { solveIv } from "../src/greeks/brent.js";
 import { computeGex } from "../src/greeks/gex.js";
+import { computeGexHeatmap } from "../src/greeks/gex-heatmap.js";
 import { formatOcc } from "../src/occ.js";
 import type { ChainSnapshot } from "../src/types.js";
 import { easternTimeToUtc } from "../src/util/session.js";
@@ -152,5 +153,106 @@ describe("gex", () => {
     expect(level).toBeGreaterThan(180);
     expect(level).toBeLessThan(220);
     expect(gex?.zeroGamma?.method).toContain("spot scan");
+  });
+});
+
+describe("gex: live re-pricing and the heatmap", () => {
+  function chain(): ChainSnapshot {
+    const ts = easternTimeToUtc("2026-08-24", 12);
+    const contracts = [];
+    for (const expiry of ["2026-08-28", "2026-09-18"]) {
+      for (const strike of [170, 180, 190, 200, 210, 220, 230]) {
+        for (const right of ["C", "P"] as const) {
+          contracts.push({
+            contract: formatOcc("NVDA", expiry, right, strike),
+            underlying: "NVDA",
+            expiry,
+            strike,
+            right,
+            oi: right === "C" ? (strike >= 200 ? 4000 : 1000) : strike <= 200 ? 4000 : 1000,
+            iv: expiry === "2026-08-28" ? 0.5 : 0.42,
+          });
+        }
+      }
+    }
+    return { underlying: "NVDA", ts, spot: 200, contracts };
+  }
+  const opts = { r: 0.05, q: 0, convention: "dealer-long-calls-short-puts" as const };
+
+  it("states the snapshot's own pricing by default", () => {
+    const gex = computeGex(chain(), opts);
+    expect(gex?.pricing.spotSource).toBe("chain-snapshot");
+    expect(gex?.pricing.spot).toBe(200);
+    expect(gex?.pricing.repricedTs).toBeNull();
+    expect(gex?.pricing.note).toContain("chain as of 2026-08-24T16:00:00.000Z");
+    expect(gex?.pricing.note).toContain("snapshot's own spot 200");
+  });
+
+  it("re-prices at an override spot without touching OI, and says when", () => {
+    const base = computeGex(chain(), opts);
+    const repricedTs = easternTimeToUtc("2026-08-24", 12, 30);
+    const moved = computeGex(chain(), { ...opts, spot: 206, repricedTs });
+    expect(moved?.spot).toBe(206);
+    expect(moved?.pricing).toMatchObject({
+      chainTs: chain().ts,
+      spot: 206,
+      spotSource: "override",
+      repricedTs,
+    });
+    expect(moved?.pricing.note).toBe(
+      "chain as of 2026-08-24T16:00:00.000Z, re-priced at spot 206 at 2026-08-24T16:30:00.000Z (OI, IV, and feed greeks are still the snapshot's)",
+    );
+    // Same OI, same strikes — only the gamma weights moved with spot.
+    expect(moved?.perStrike.map((r) => [r.strike, r.callOi, r.putOi])).toEqual(
+      base?.perStrike.map((r) => [r.strike, r.callOi, r.putOi]),
+    );
+    expect(moved?.totalGex).not.toBe(base?.totalGex);
+    expect(moved?.conventionNote).toBe(base?.conventionNote); // verbatim, always
+    // A junk override is ignored, not obeyed.
+    expect(computeGex(chain(), { ...opts, spot: -3 })?.pricing.spotSource).toBe("chain-snapshot");
+  });
+
+  it("the heatmap's cells sum to the ladder along both axes", () => {
+    const heat = computeGexHeatmap(chain(), { ...opts, rows: 5 });
+    const all = computeGex(chain(), opts);
+    expect(heat).not.toBeNull();
+    expect(heat?.expiries).toEqual(["2026-08-28", "2026-09-18"]);
+    expect(heat?.strikes).toEqual([180, 190, 200, 210, 220]); // 5 nearest to spot 200
+    expect(heat?.strikesOmitted).toBe(2); // 170 and 230
+    expect(heat?.spotRowIndex).toBe(2);
+    expect(heat?.cells).toHaveLength(5);
+    // Row sums equal the all-expiry ladder at that strike …
+    heat?.strikes.forEach((strike, i) => {
+      const rowSum = (heat.cells[i] ?? []).reduce((a, v) => a + v, 0);
+      const ladderRow = all?.perStrike.find((r) => r.strike === strike)?.netGex ?? Number.NaN;
+      expect(rowSum).toBeCloseTo(ladderRow, 1);
+      expect(heat.strikeTotals[i]).toBe(ladderRow);
+    });
+    // … and each expiry total equals that expiry's own whole ladder.
+    heat?.expiries.forEach((expiry, j) => {
+      const own = computeGex(chain(), { ...opts, expiry });
+      expect(heat.expiryTotals[j]).toBe(own?.totalGex);
+    });
+    expect(heat?.totalGex).toBe(all?.totalGex);
+    expect(heat?.zeroGamma).toEqual(all?.zeroGamma);
+    expect(heat?.conventionNote).toBe(all?.conventionNote);
+    expect(heat?.pricing.spotSource).toBe("chain-snapshot");
+    expect(heat?.note).toContain("per 1% spot move");
+  });
+
+  it("the heatmap re-prices too and carries the same pricing line", () => {
+    const ts = easternTimeToUtc("2026-08-24", 13);
+    const heat = computeGexHeatmap(chain(), { ...opts, spot: 195, repricedTs: ts });
+    expect(heat?.spot).toBe(195);
+    expect(heat?.pricing.spotSource).toBe("override");
+    expect(heat?.pricing.note).toContain("re-priced at spot 195 at 2026-08-24T17:00:00.000Z");
+    expect(heat?.strikes).toHaveLength(7); // default rows (21) keeps the whole small chain
+    expect(heat?.strikesOmitted).toBe(0);
+  });
+
+  it("is deterministic", () => {
+    const a = JSON.stringify(computeGexHeatmap(chain(), { ...opts, spot: 203, repricedTs: 1 }));
+    const b = JSON.stringify(computeGexHeatmap(chain(), { ...opts, spot: 203, repricedTs: 1 }));
+    expect(a).toBe(b);
   });
 });

@@ -9,6 +9,7 @@ import { mkdirSync, statSync } from "node:fs";
 import { dirname } from "node:path";
 import Database from "better-sqlite3";
 import { type AlertRule, alertRuleSchema } from "../config.js";
+import type { FlowBucketRow } from "../flow/series.js";
 import { type BaselineDayRows, BaselineState } from "../score/baselines.js";
 import type {
   ChainSnapshot,
@@ -30,9 +31,10 @@ import type {
   UnderlyingDailyRow,
 } from "./types.js";
 
-// v2 added contract_daily / underlying_daily / short_volume_daily — purely
-// additive, so older databases upgrade transparently on open.
-const SCHEMA_VERSION = 2;
+// v2 added contract_daily / underlying_daily / short_volume_daily; v3 added
+// flow_buckets (per-print flow series) — both purely additive, so older
+// databases upgrade transparently on open.
+const SCHEMA_VERSION = 3;
 
 const SCHEMA = `
 CREATE TABLE IF NOT EXISTS meta (
@@ -121,6 +123,32 @@ CREATE TABLE IF NOT EXISTS short_volume_daily (
   total_volume INTEGER NOT NULL,
   source TEXT NOT NULL,
   PRIMARY KEY (symbol, session_date)
+);
+CREATE TABLE IF NOT EXISTS flow_buckets (
+  underlying TEXT NOT NULL,
+  session_date TEXT NOT NULL,
+  ts INTEGER NOT NULL,
+  bucket_ms INTEGER NOT NULL,
+  prints INTEGER NOT NULL,
+  cancels INTEGER NOT NULL,
+  sided INTEGER NOT NULL,
+  unsided INTEGER NOT NULL,
+  buy_volume INTEGER NOT NULL,
+  sell_volume INTEGER NOT NULL,
+  call_premium_buy REAL NOT NULL,
+  call_premium_sell REAL NOT NULL,
+  put_premium_buy REAL NOT NULL,
+  put_premium_sell REAL NOT NULL,
+  directional_delta REAL NOT NULL,
+  delta_from_chain INTEGER NOT NULL,
+  delta_from_bs INTEGER NOT NULL,
+  delta_missing INTEGER NOT NULL,
+  spot_open REAL,
+  spot_high REAL,
+  spot_low REAL,
+  spot_close REAL,
+  spot_observations INTEGER NOT NULL,
+  PRIMARY KEY (underlying, session_date, ts)
 );
 CREATE TABLE IF NOT EXISTS rules (
   id TEXT PRIMARY KEY,
@@ -554,6 +582,85 @@ export class SqliteFlightRecorder implements FlightRecorder {
       .sort((a, b) => Math.abs(b.netPremium) - Math.abs(a.netPremium));
   }
 
+  upsertFlowBuckets(rows: FlowBucketRow[]): void {
+    if (rows.length === 0) return;
+    const stmt = this.db.prepare(
+      `INSERT OR REPLACE INTO flow_buckets
+       (underlying, session_date, ts, bucket_ms, prints, cancels, sided, unsided,
+        buy_volume, sell_volume, call_premium_buy, call_premium_sell, put_premium_buy,
+        put_premium_sell, directional_delta, delta_from_chain, delta_from_bs, delta_missing,
+        spot_open, spot_high, spot_low, spot_close, spot_observations)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    );
+    const tx = this.db.transaction((all: FlowBucketRow[]) => {
+      for (const r of all) {
+        stmt.run(
+          r.underlying.toUpperCase(),
+          r.sessionDate,
+          r.ts,
+          r.bucketMs,
+          r.prints,
+          r.cancels,
+          r.sided,
+          r.unsided,
+          r.buyVolume,
+          r.sellVolume,
+          r.callPremiumBuy,
+          r.callPremiumSell,
+          r.putPremiumBuy,
+          r.putPremiumSell,
+          r.directionalDelta,
+          r.deltaFromChain,
+          r.deltaFromBlackScholes,
+          r.deltaMissing,
+          r.spotOpen,
+          r.spotHigh,
+          r.spotLow,
+          r.spotClose,
+          r.spotObservations,
+        );
+      }
+    });
+    tx(rows);
+  }
+
+  getFlowBuckets(underlying: string, sessionDate: string): FlowBucketRow[] {
+    const rows = this.db
+      .prepare(
+        "SELECT * FROM flow_buckets WHERE underlying = ? AND session_date = ? ORDER BY ts ASC",
+      )
+      .all(underlying.toUpperCase(), sessionDate) as Array<Record<string, unknown>>;
+    return rows.map(mapFlowBucket);
+  }
+
+  flowSessionDates(underlying?: string): string[] {
+    const rows = (
+      underlying
+        ? this.db
+            .prepare(
+              "SELECT DISTINCT session_date AS d FROM flow_buckets WHERE underlying = ? ORDER BY d ASC",
+            )
+            .all(underlying.toUpperCase())
+        : this.db
+            .prepare("SELECT DISTINCT session_date AS d FROM flow_buckets ORDER BY d ASC")
+            .all()
+    ) as Array<{ d: string }>;
+    return rows.map((r) => r.d);
+  }
+
+  flowUnderlyings(sessionDate?: string): string[] {
+    const rows = (
+      sessionDate
+        ? this.db
+            .prepare(
+              "SELECT DISTINCT underlying AS u FROM flow_buckets WHERE session_date = ? ORDER BY u ASC",
+            )
+            .all(sessionDate)
+        : this.db.prepare("SELECT DISTINCT underlying AS u FROM flow_buckets ORDER BY u ASC").all()
+    ) as Array<{ u: string }>;
+    return rows.map((r) => r.u);
+  }
+
   listRules(): StoredRule[] {
     const rows = this.db
       .prepare("SELECT json, source, created_ts, updated_ts FROM rules ORDER BY created_ts ASC")
@@ -690,6 +797,34 @@ export class SqliteFlightRecorder implements FlightRecorder {
   close(): void {
     this.db.close();
   }
+}
+
+function mapFlowBucket(r: Record<string, unknown>): FlowBucketRow {
+  return {
+    underlying: r.underlying as string,
+    sessionDate: r.session_date as string,
+    ts: r.ts as number,
+    bucketMs: r.bucket_ms as number,
+    prints: r.prints as number,
+    cancels: r.cancels as number,
+    sided: r.sided as number,
+    unsided: r.unsided as number,
+    buyVolume: r.buy_volume as number,
+    sellVolume: r.sell_volume as number,
+    callPremiumBuy: r.call_premium_buy as number,
+    callPremiumSell: r.call_premium_sell as number,
+    putPremiumBuy: r.put_premium_buy as number,
+    putPremiumSell: r.put_premium_sell as number,
+    directionalDelta: r.directional_delta as number,
+    deltaFromChain: r.delta_from_chain as number,
+    deltaFromBlackScholes: r.delta_from_bs as number,
+    deltaMissing: r.delta_missing as number,
+    spotOpen: r.spot_open as number | null,
+    spotHigh: r.spot_high as number | null,
+    spotLow: r.spot_low as number | null,
+    spotClose: r.spot_close as number | null,
+    spotObservations: r.spot_observations as number,
+  };
 }
 
 function mapContractDaily(r: Record<string, unknown>): ContractDailyRow {

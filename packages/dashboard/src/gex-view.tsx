@@ -1,42 +1,28 @@
 /*
-  GEX ladder view: per-strike net gamma exposure as a horizontal bar ladder
-  (hand-rolled SVG — no chart libraries, on purpose), with the spot line,
-  the interpolated zero-gamma level, and the engine's convention note shown
-  verbatim: the sign convention is an assumption about dealer positioning,
-  and the UI must say so rather than dress it up as data.
+  GEX view: the per-strike net gamma exposure ladder (hand-rolled SVG — no
+  chart libraries, on purpose) next to the strike-by-expiry heatmap, both
+  re-priced at the latest live spot every couple of seconds while the tab is
+  visible (the chain is a snapshot; only the spot moves, and the pricing line
+  says exactly that). The engine's convention note shows verbatim: the sign
+  convention is an assumption about dealer positioning, and the UI must say
+  so rather than dress it up as data.
 */
-import { useEffect, useState } from "react";
-import { etDateTime, int, signedMoney } from "./format.js";
-import type { GexLadder } from "./types.js";
+import { Fragment, useState } from "react";
+import { etDateTime, etTime, int, signedMoney } from "./format.js";
+import { useLiveSpot } from "./live-socket.js";
+import type { GexHeatmap, GexLadder } from "./types.js";
+import { useLiveGex } from "./use-chart-data.js";
 
-export function GexView({ chains }: { chains: string[] }) {
+export function GexView({ chains, active: visible }: { chains: string[]; active: boolean }) {
   const [picked, setPicked] = useState("");
   const active = picked !== "" && chains.includes(picked) ? picked : (chains[0] ?? "");
-  const [ladder, setLadder] = useState<GexLadder | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-
-  useEffect(() => {
-    if (active === "") return;
-    const controller = new AbortController();
-    setLoading(true);
-    fetch(`/api/gex/${encodeURIComponent(active)}`, { signal: controller.signal })
-      .then(async (res) => {
-        const body = (await res.json()) as { gex?: GexLadder; error?: string };
-        if (!res.ok || !body.gex) throw new Error(body.error ?? `HTTP ${res.status}`);
-        setLadder(body.gex);
-        setError(null);
-      })
-      .catch((err: unknown) => {
-        if (controller.signal.aborted) return;
-        setLadder(null);
-        setError(err instanceof Error ? err.message : String(err));
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setLoading(false);
-      });
-    return () => controller.abort();
-  }, [active]);
+  const liveSpot = useLiveSpot(visible && active !== "" ? active : null);
+  const { ladder, heatmap, error, loading } = useLiveGex(
+    active === "" ? null : active,
+    liveSpot.spot,
+    visible,
+    true,
+  );
 
   if (chains.length === 0) {
     return (
@@ -77,11 +63,22 @@ export function GexView({ chains }: { chains: string[] }) {
             ) : (
               <span className="text-zinc-600">no sign change in scan range</span>
             )}{" "}
-            · {ladder.expiriesIncluded.length} expiries · snapshot {etDateTime(ladder.ts)} ET
+            · {ladder.expiriesIncluded.length} expiries · chain {etDateTime(ladder.ts)} ET
           </p>
         )}
         {loading && <span className="text-[10px] text-zinc-600">loading…</span>}
       </div>
+
+      {ladder && (
+        <p className="text-[10px] text-zinc-500">
+          pricing: {ladder.pricing.note}
+          {ladder.pricing.spotSource === "override" && ladder.pricing.repricedTs !== null
+            ? ` · re-priced live every ~2s while this tab is visible (last ${etTime(ladder.pricing.repricedTs)} ET)`
+            : liveSpot.spot === null
+              ? " · live re-pricing starts once the stream reports a spot for this name"
+              : ""}
+        </p>
+      )}
 
       {error && <p className="text-xs text-amber-400">{error}</p>}
 
@@ -110,16 +107,138 @@ export function GexView({ chains }: { chains: string[] }) {
             </span>
             convention "{ladder.convention}": {ladder.conventionNote}
           </div>
-          <div className="overflow-x-auto rounded border border-zinc-800 bg-zinc-950 p-2">
-            <LadderSvg ladder={ladder} />
+          <div className="grid gap-3 xl:grid-cols-2">
+            <div className="overflow-x-auto rounded border border-zinc-800 bg-zinc-950 p-2">
+              <LadderSvg ladder={ladder} />
+            </div>
+            {heatmap && <HeatmapGrid heatmap={heatmap} />}
           </div>
           {ladder.zeroGamma && (
             <p className="text-[10px] text-zinc-600">
               zero-gamma method: {ladder.zeroGamma.method}
             </p>
           )}
+          {heatmap && (
+            <p className="max-w-5xl text-[10px] leading-4 text-zinc-500">heatmap: {heatmap.note}</p>
+          )}
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * Strike × expiry net GEX grid: diverging green/red scale on |value| against
+ * the grid's own maximum, the value printed in every cell, per-expiry totals
+ * in the footer, the all-expiry ladder as the last column, the spot row
+ * highlighted, and the zero-gamma level marked between the rows it falls in.
+ */
+function HeatmapGrid({ heatmap }: { heatmap: GexHeatmap }) {
+  const maxAbs = Math.max(1, ...heatmap.cells.flat().map((v) => Math.abs(v)));
+  const cellStyle = (v: number) => {
+    const t = Math.min(1, Math.abs(v) / maxAbs);
+    const alpha = 0.08 + 0.72 * Math.sqrt(t);
+    return {
+      backgroundColor: v >= 0 ? `rgba(16,185,129,${alpha})` : `rgba(239,68,68,${alpha})`,
+      color: t > 0.45 ? "#fafafa" : v >= 0 ? "#a7f3d0" : "#fecaca",
+    };
+  };
+  // Rows run high strike → low strike, like the ladder; zero-gamma sits between rows.
+  const order = heatmap.strikes.map((_, i) => i).reverse();
+  const zero = heatmap.zeroGamma?.level ?? null;
+  const zeroAfterRow = (rowIdx: number): boolean => {
+    if (zero === null) return false;
+    const here = heatmap.strikes[rowIdx];
+    const nextIdx = rowIdx - 1;
+    const below = heatmap.strikes[nextIdx];
+    if (here === undefined) return false;
+    if (below === undefined) return zero < here && rowIdx === 0;
+    return zero < here && zero >= below;
+  };
+  return (
+    <div className="overflow-x-auto rounded border border-zinc-800 bg-zinc-950">
+      <table className="w-full text-right text-[11px] tabular-nums">
+        <thead>
+          <tr className="border-b border-zinc-800 text-[10px] uppercase tracking-wide text-zinc-500">
+            <th className="px-2 py-1.5 text-left font-normal">strike</th>
+            {heatmap.expiries.map((e) => (
+              <th key={e} className="px-2 py-1.5 font-normal">
+                {e.slice(5)}
+              </th>
+            ))}
+            <th className="border-l border-zinc-800 px-2 py-1.5 font-normal text-zinc-300">all</th>
+          </tr>
+        </thead>
+        <tbody>
+          {order.map((i) => {
+            const strike = heatmap.strikes[i] ?? 0;
+            const isSpot = heatmap.spotRowIndex === i;
+            return (
+              <Fragment key={strike}>
+                <tr
+                  className={isSpot ? "outline outline-1 -outline-offset-1 outline-sky-400/70" : ""}
+                  title={isSpot ? `spot ${heatmap.spot.toFixed(2)} sits at this strike` : undefined}
+                >
+                  <td
+                    className={`px-2 py-0.5 text-left ${isSpot ? "text-sky-300" : "text-zinc-400"}`}
+                  >
+                    {strike}
+                    {isSpot ? " ◂ spot" : ""}
+                  </td>
+                  {(heatmap.cells[i] ?? []).map((v, j) => (
+                    <td key={heatmap.expiries[j]} className="px-2 py-0.5" style={cellStyle(v)}>
+                      {signedMoney(v)}
+                    </td>
+                  ))}
+                  <td
+                    className={`border-l border-zinc-800 px-2 py-0.5 font-bold ${
+                      (heatmap.strikeTotals[i] ?? 0) >= 0 ? "text-emerald-400" : "text-red-400"
+                    }`}
+                  >
+                    {signedMoney(heatmap.strikeTotals[i] ?? 0)}
+                  </td>
+                </tr>
+                {zeroAfterRow(i) && zero !== null && (
+                  <tr>
+                    <td
+                      colSpan={heatmap.expiries.length + 2}
+                      className="border-t border-dashed border-amber-400/70 px-2 py-0 text-left text-[9px] leading-3 text-amber-400"
+                    >
+                      zero-gamma {zero.toFixed(2)}
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr className="border-t border-zinc-700 bg-zinc-900/50 font-bold">
+            <td className="px-2 py-1 text-left text-zinc-300">TOTAL</td>
+            {heatmap.expiryTotals.map((v, j) => (
+              <td
+                key={heatmap.expiries[j]}
+                className={`px-2 py-1 ${v >= 0 ? "text-emerald-400" : "text-red-400"}`}
+                title="this expiry's whole ladder, including strikes not shown"
+              >
+                {signedMoney(v)}
+              </td>
+            ))}
+            <td
+              className={`border-l border-zinc-800 px-2 py-1 ${
+                heatmap.totalGex >= 0 ? "text-emerald-400" : "text-red-400"
+              }`}
+            >
+              {signedMoney(heatmap.totalGex)}
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+      <p className="px-2 py-1 text-[10px] text-zinc-600">
+        net GEX per 1% move, strike × expiry · {heatmap.strikes.length} strikes nearest spot shown
+        {heatmap.strikesOmitted > 0 ? `, ${int(heatmap.strikesOmitted)} omitted` : ""} · "all" is
+        the ladder row · totals are each expiry's whole ladder
+      </p>
     </div>
   );
 }

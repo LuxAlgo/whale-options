@@ -8,7 +8,7 @@
   change — stated as the method in the output.
 */
 
-import type { ChainSnapshot, GexLadder } from "../types.js";
+import type { ChainSnapshot, GexLadder, GexPricing } from "../types.js";
 import { easternTimeToUtc } from "../util/session.js";
 import { blackScholes } from "./black-scholes.js";
 import { solveIv } from "./brent.js";
@@ -22,6 +22,40 @@ export interface GexOptions {
   /** Spot-scan half-width for the zero-gamma search, as a fraction of spot. */
   scanWidth?: number;
   scanSteps?: number;
+  /**
+   * Re-price the snapshot's chain at this spot instead of the snapshot's own —
+   * the live ladder between chain refreshes. OI/IV/greeks stay as snapshotted;
+   * the output's `pricing` says so. Ignored when not a positive finite number.
+   */
+  spot?: number;
+  /** When the override spot was observed (epoch ms); stated in the pricing note. */
+  repricedTs?: number;
+}
+
+/** The provenance line every GEX payload carries. */
+export function gexPricing(snapshot: ChainSnapshot, opts: GexOptions): GexPricing | null {
+  const override =
+    opts.spot !== undefined && Number.isFinite(opts.spot) && opts.spot > 0 ? opts.spot : null;
+  const spot = override ?? snapshot.spot;
+  if (spot === null || spot <= 0) return null;
+  const chainIso = new Date(snapshot.ts).toISOString();
+  if (override === null) {
+    return {
+      chainTs: snapshot.ts,
+      spot,
+      spotSource: "chain-snapshot",
+      repricedTs: null,
+      note: `chain as of ${chainIso}, priced at the snapshot's own spot ${spot}`,
+    };
+  }
+  const repricedTs = opts.repricedTs ?? snapshot.ts;
+  return {
+    chainTs: snapshot.ts,
+    spot,
+    spotSource: "override",
+    repricedTs,
+    note: `chain as of ${chainIso}, re-priced at spot ${spot} at ${new Date(repricedTs).toISOString()} (OI, IV, and feed greeks are still the snapshot's)`,
+  };
 }
 
 const YEAR_MS = 365 * 86_400_000;
@@ -35,8 +69,9 @@ interface PricedContract {
 }
 
 export function computeGex(snapshot: ChainSnapshot, opts: GexOptions): GexLadder | null {
-  const spot = snapshot.spot;
-  if (spot === null || spot <= 0) return null;
+  const pricing = gexPricing(snapshot, opts);
+  if (!pricing) return null;
+  const spot = pricing.spot;
   const sign = opts.convention === "dealer-long-calls-short-puts" ? 1 : -1;
   const expiries = new Set<string>();
   const priced: PricedContract[] = [];
@@ -166,6 +201,7 @@ export function computeGex(snapshot: ChainSnapshot, opts: GexOptions): GexLadder
     spot,
     convention: opts.convention,
     conventionNote,
+    pricing,
     expiriesIncluded: [...expiries].sort(),
     perStrike,
     totalGex,

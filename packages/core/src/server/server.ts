@@ -13,14 +13,31 @@ import { type WebSocket, WebSocketServer } from "ws";
 import { AUDIT_HORIZONS, type AuditHorizon, calibrate } from "../audit/index.js";
 import { alertRuleSchema, type WhaleConfig } from "../config.js";
 import { shortVolumeReport } from "../context/index.js";
+import { BAR_TIMEFRAME_MS, parseBarTimeframe } from "../feeds/bars.js";
+import type { FeedAdapter, UnderlyingBarsResult } from "../feeds/types.js";
+import {
+  type FlowBucketRow,
+  flowSeriesPayload,
+  resampleFlowBuckets,
+  spotBarsFromBuckets,
+} from "../flow/series.js";
 import { computeGex } from "../greeks/gex.js";
+import { computeGexHeatmap } from "../greeks/gex-heatmap.js";
 import { ivRank, maxPain, netFlowReport, oiDeltas } from "../market/index.js";
 import type { FlightRecorder } from "../store/types.js";
 import type { EventKind, FlowEvent, Side } from "../types.js";
+import { easternTimeToUtc, sessionDateOf } from "../util/session.js";
+
+export const SPOT_TAPE_BARS_NOTE =
+  "SPOT TAPE FROM PRINTS: these bars are the underlying-price observations that rode on the " +
+  "option prints (tick.spot), folded to the timeframe — not exchange equity bars. A bar exists " +
+  "only where options printed, volume is null, and gaps are minutes with no prints.";
 
 export interface WhaleServer {
   listen(): Promise<{ host: string; port: number }>;
   broadcast(event: FlowEvent): void;
+  /** Push per-print flow buckets (the chart's live series) onto /ws. */
+  broadcastFlow(rows: FlowBucketRow[]): void;
   close(): Promise<void>;
 }
 
@@ -33,6 +50,9 @@ export function createWhaleServer(opts: {
    *  its files (SPA fallback to index.html); when absent the server is
    *  API-only — the CLI degrades silently if the dashboard isn't installed. */
   staticDir?: string;
+  /** The running feed, for /api/bars (underlying bars). Absent ⇒ the route
+   *  serves the spot tape from prints only, and says so. */
+  adapter?: FeedAdapter;
 }): WhaleServer {
   const { store, config } = opts;
   const sockets = new Set<WebSocket>();
@@ -103,7 +123,10 @@ export function createWhaleServer(opts: {
       return;
     }
 
-    const gexMatch = /^\/api\/gex\/([A-Za-z0-9.]+)$/.exec(path);
+    // GEX ladder and heatmap. `spot=` re-prices the snapshotted chain at a live
+    // spot (the dashboard's throttled live re-pricing) — the payload's
+    // `pricing` line states the chain time and the re-pricing spot/time.
+    const gexMatch = /^\/api\/gex\/([A-Za-z0-9.]+)(\/heatmap)?$/.exec(path);
     if (req.method === "GET" && gexMatch?.[1]) {
       const snapshot = store.getChainSnapshot(gexMatch[1]);
       if (!snapshot) {
@@ -112,17 +135,159 @@ export function createWhaleServer(opts: {
         });
         return;
       }
-      const ladder = computeGex(snapshot, {
+      const q = url.searchParams;
+      const spotOverride = numberParam(q.get("spot"));
+      if (q.get("spot") !== null && (spotOverride === undefined || spotOverride <= 0)) {
+        sendJson(res, 400, { error: "spot must be a positive number" });
+        return;
+      }
+      const greeks = {
         r: config.greeks.r,
         q: config.greeks.qByUnderlying[snapshot.underlying] ?? config.greeks.q,
         convention: config.greeks.gexConvention,
-        expiry: url.searchParams.get("expiry") ?? undefined,
-      });
+        spot: spotOverride,
+        repricedTs: spotOverride === undefined ? undefined : Date.now(),
+      };
+      if (gexMatch[2]) {
+        const heatmap = computeGexHeatmap(snapshot, {
+          ...greeks,
+          rows: numberParam(q.get("rows")),
+        });
+        if (!heatmap) {
+          sendJson(res, 422, { error: "chain snapshot has no usable contracts (no OI/IV/greeks)" });
+          return;
+        }
+        sendJson(res, 200, { heatmap });
+        return;
+      }
+      const ladder = computeGex(snapshot, { ...greeks, expiry: q.get("expiry") ?? undefined });
       if (!ladder) {
         sendJson(res, 422, { error: "chain snapshot has no usable contracts (no OI/IV/greeks)" });
         return;
       }
       sendJson(res, 200, { gex: ladder });
+      return;
+    }
+
+    // Underlying bars for the chart's price pane: the feed's equity bars when
+    // the adapter serves them, else the spot tape built from option prints —
+    // the payload always says which, because the two are not the same thing.
+    const barsMatch = /^\/api\/bars\/([A-Za-z0-9.]+)$/.exec(path);
+    if (req.method === "GET" && barsMatch?.[1]) {
+      const underlying = barsMatch[1].toUpperCase();
+      const q = url.searchParams;
+      const timeframe = parseBarTimeframe(q.get("tf"));
+      if (!timeframe) {
+        sendJson(res, 400, { error: `unknown tf '${q.get("tf")}'; one of 1m, 5m, 15m, 1h, 1d` });
+        return;
+      }
+      const session = q.get("session");
+      if (session !== null && !/^\d{4}-\d{2}-\d{2}$/.test(session)) {
+        sendJson(res, 400, { error: "session must be an ISO date, e.g. 2026-08-24" });
+        return;
+      }
+      // Default window: the whole extended day of the session (04:00–20:00 ET).
+      const day = session ?? sessionDateOf(Date.now());
+      const from = numberParam(q.get("from")) ?? easternTimeToUtc(day, 4);
+      const to = numberParam(q.get("to")) ?? easternTimeToUtc(day, 20);
+      if (to < from) {
+        sendJson(res, 400, { error: "'to' must not precede 'from'" });
+        return;
+      }
+      const tfMs = BAR_TIMEFRAME_MS[timeframe];
+      let feedResult: UnderlyingBarsResult | null = null;
+      let feedTried = false;
+      if (opts.adapter?.getUnderlyingBars) {
+        feedTried = true;
+        feedResult = await opts.adapter
+          .getUnderlyingBars(underlying, timeframe, { from, to })
+          .catch(() => null);
+      }
+      if (feedResult && feedResult.bars.length > 0) {
+        sendJson(res, 200, {
+          underlying,
+          timeframe,
+          timeframeMs: tfMs,
+          from,
+          to,
+          source: feedResult.source,
+          sourceKind: "feed",
+          feed: opts.adapter?.id ?? null,
+          bars: feedResult.bars,
+          note: feedResult.note,
+        });
+        return;
+      }
+      // Spot tape fallback: every session the window touches.
+      const rows: FlowBucketRow[] = [];
+      for (
+        let d = sessionDateOf(from);
+        d <= sessionDateOf(to);
+        d = sessionDateOf(easternTimeToUtc(d, 12) + 86_400_000)
+      ) {
+        rows.push(...store.getFlowBuckets(underlying, d));
+      }
+      const bars = spotBarsFromBuckets(
+        rows.filter((r) => r.ts >= from && r.ts <= to),
+        tfMs,
+      ).map((b) => ({ ...b, volume: null }));
+      const why = !feedTried
+        ? `the ${opts.adapter?.id ?? "current"} feed has no underlying-bar surface`
+        : feedResult === null
+          ? `the ${opts.adapter?.id} feed could not serve bars for this range`
+          : `the ${opts.adapter?.id} feed returned no bars for this range`;
+      sendJson(res, 200, {
+        underlying,
+        timeframe,
+        timeframeMs: tfMs,
+        from,
+        to,
+        source: "spot-tape-from-prints",
+        sourceKind: "spot-tape",
+        feed: opts.adapter?.id ?? null,
+        bars,
+        note: `${SPOT_TAPE_BARS_NOTE} Served because ${why}.`,
+      });
+      return;
+    }
+
+    // Per-print flow series — the chart tab's data spine. Sessions first (the
+    // date picker), then one underlying's session, optionally re-bucketed.
+    if (req.method === "GET" && path === "/api/flow/sessions") {
+      const underlying = url.searchParams.get("underlying") ?? undefined;
+      const today = sessionDateOf(Date.now());
+      const sessions = store.flowSessionDates(underlying);
+      sendJson(res, 200, {
+        sessions,
+        today,
+        underlyings: store.flowUnderlyings(url.searchParams.get("session") ?? undefined),
+        note: "recorded sessions with per-print flow buckets; `today` is the live session date (America/New_York) whether or not it has buckets yet",
+      });
+      return;
+    }
+
+    const flowMatch = /^\/api\/flow\/([A-Za-z0-9.]+)\/series$/.exec(path);
+    if (req.method === "GET" && flowMatch?.[1]) {
+      const underlying = flowMatch[1].toUpperCase();
+      const q = url.searchParams;
+      const sessionDate = q.get("session") ?? sessionDateOf(Date.now());
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+        sendJson(res, 400, { error: "session must be an ISO date, e.g. 2026-08-24" });
+        return;
+      }
+      const rows = store.getFlowBuckets(underlying, sessionDate);
+      const stored = rows[0]?.bucketMs ?? config.flowSeries.bucketMs;
+      const bucketMs = numberParam(q.get("bucket")) ?? stored;
+      let resampled: FlowBucketRow[];
+      try {
+        resampled = resampleFlowBuckets(rows, bucketMs);
+      } catch (err) {
+        sendJson(res, 400, { error: err instanceof Error ? err.message : String(err) });
+        return;
+      }
+      sendJson(res, 200, {
+        series: flowSeriesPayload(underlying, sessionDate, resampled, bucketMs),
+      });
       return;
     }
 
@@ -267,12 +432,21 @@ export function createWhaleServer(opts: {
       new Promise((resolve, reject) => {
         server.once("error", reject);
         server.listen(config.server.port, config.server.host, () => {
-          resolve({ host: config.server.host, port: config.server.port });
+          const addr = server.address();
+          const port = addr && typeof addr === "object" ? addr.port : config.server.port;
+          resolve({ host: config.server.host, port });
         });
       }),
     broadcast: (event: FlowEvent) => {
       if (sockets.size === 0) return;
       const payload = JSON.stringify({ type: "event", event });
+      for (const socket of sockets) {
+        if (socket.readyState === socket.OPEN) socket.send(payload);
+      }
+    },
+    broadcastFlow: (rows: FlowBucketRow[]) => {
+      if (sockets.size === 0 || rows.length === 0) return;
+      const payload = JSON.stringify({ type: "flow", buckets: rows });
       for (const socket of sockets) {
         if (socket.readyState === socket.OPEN) socket.send(payload);
       }

@@ -95,6 +95,7 @@ export function registerRun(program: Command): void {
           store,
           config,
           staticDir,
+          adapter,
           statusExtras: () => ({
             feed: config.feed.id,
             universe: config.universe.underlyings,
@@ -144,6 +145,7 @@ export function registerRun(program: Command): void {
         store,
         record,
         signal: controller.signal,
+        onFlowBuckets: (rows) => server?.broadcastFlow(rows),
         onEvent: (event) => {
           server?.broadcast(event);
           if (flags.quiet) return;

@@ -18,7 +18,7 @@
 <br>
 <br>
 
-<a href="#the-60-second-demo">Demo</a> · <a href="#bring-your-feed">Feeds</a> · <a href="#classification-sweeps-blocks-splits-and-the-boring-parts-that-make-them-true">Classification</a> · <a href="#gex">GEX</a> · <a href="#alerts">Alerts</a> · <a href="#flight-recorder-and-replay">Replay</a> · <a href="#measure-it">Audit</a> · <a href="#agent-native-the-mcp-server">MCP</a> · <a href="#documentation">Docs</a>
+<a href="#the-60-second-demo">Demo</a> · <a href="#bring-your-feed">Feeds</a> · <a href="#classification-sweeps-blocks-splits-and-the-boring-parts-that-make-them-true">Classification</a> · <a href="#gex">GEX</a> · <a href="#charting-flow-on-the-tape">Charting</a> · <a href="#alerts">Alerts</a> · <a href="#flight-recorder-and-replay">Replay</a> · <a href="#measure-it">Audit</a> · <a href="#agent-native-the-mcp-server">MCP</a> · <a href="#documentation">Docs</a>
 
 <sub>Whale Options is a <a href="https://luxalgo.com">LuxAlgo</a> open-source project. Official repository: <a href="https://github.com/LuxAlgo/whale-options">github.com/LuxAlgo/whale-options</a></sub>
 
@@ -203,6 +203,31 @@ That convention line ships in every output (CLI, API, MCP) because the dealer-po
 
 <div align="center"><sub>The same ladder in the dashboard's gex tab: per-strike net GEX, spot and zero-gamma levels, and the assumption banner that never goes away. Synthetic chain.</sub></div>
 
+The gex tab also renders the ladder as a **strike-by-expiry heatmap** (`GET /api/gex/:underlying/heatmap`, MCP `whale_gex_heatmap`): rows are the strikes nearest spot, columns the chain's expiries, each cell the net GEX per 1% move for that strike and expiry, with per-expiry totals, the all-expiry ladder as the last column, the spot row highlighted, and zero-gamma marked between the rows it falls in. While the tab is visible, both the ladder and the grid are **re-priced at the latest spot from the live stream every ~2 seconds without refetching the chain** (`?spot=`): OI, IV, and feed greeks stay as snapshotted, only the gamma weights move, and the payload's pricing line says exactly that: `chain as of <ts>, re-priced at spot <x> at <ts>`. Old open interest evaluated at a new price is not a new chain, so the output never lets you mistake one for the other.
+
+<img src="docs/assets/gex-heatmap.png" alt="Whale Options dashboard gex tab: the per-strike ladder next to the strike-by-expiry GEX heatmap, spot row highlighted, zero-gamma marked, pricing line stating the chain time and the live re-pricing spot" width="100%">
+
+<div align="center"><sub>Ladder and heatmap side by side, re-priced live at the latest spot; the pricing line above them states the chain time and the re-pricing time. Seeded synthetic feed.</sub></div>
+
+## Charting: flow on the tape
+
+The dashboard's **chart** tab puts the flow on a price chart, drawn in the browser by [Vela](https://github.com/LuxAlgo/Vela), LuxAlgo's open-source charting library (Apache-2.0, loaded on first visit so the flow table's bundle is unchanged). The engine computes every number on it; the chart is a window.
+
+<img src="docs/assets/chart-flow.png" alt="Whale Options dashboard chart tab: underlying candles with sweep, block, and split markers sized by premium and colored by side, above three panes built from every print — net premium (calls, puts, net), directional delta, and net volume — with the GEX levels legend and the series notes" width="100%">
+
+<div align="center"><sub>A recorded session on the chart tab at 5-minute bars: candles from the spot tape (the badge says so), the 40 largest sweeps/blocks/splits by premium marked at their time and spot (the marker filter defaults to that; "show all" paints every event), and the three per-print panes in $M / thousands; the session totals sit under the chart and the full series definitions and exclusion counts open from the "what is on this chart" disclosure. Seeded synthetic feed.</sub></div>
+
+What is on it, and what each series is:
+
+- **Price pane: the underlying's candles.** From the feed's equity bars when the vendor serves them (`FeedAdapter.getUnderlyingBars`: Alpaca and Massive today; the synthetic feed serves its own seeded spot walk so the zero-key demo has candles), otherwise from the **spot tape from prints**: the underlying-price observations that rode on the option prints, folded to the timeframe. A bar then exists only where options printed, there is no share volume, and the tab shows a `SPOT TAPE FROM PRINTS` badge. `GET /api/bars/:underlying?tf=1m` names its `source` in every payload.
+- **Markers: the engine's sweeps, blocks, and splits**, at each event's timestamp and spot, sized by premium (log scale), colored by aggressor side, calls above the bar and puts below, shape by kind. A marker filter (kinds, min score, min premium) defaults to the session's 40 largest by premium so the candles stay legible; the count reads "40 of 276 events marked" and "show all" paints the whole event tape. Hover for the print, click for the same event drawer the flow table opens: the full score breakdown, the reasons trail, and the NBBO each leg was judged against. The premium floor applies to markers (they are emitted events) and to nothing else on the chart.
+- **Net premium pane: built from every normalized print**, floor or no floor. Sign comes from the aggressor side against the NBBO stored on the print: at or above the ask is a buy (+), at or below the bid a sell (−). Mid prints, unknown sides, and sale conditions that void the side (spread legs, auctions, crosses, late reports) are excluded from every signed series and counted as `unsided` in the payload; cancels are counted and otherwise ignored, nothing is retracted. Calls (green) and puts (red) are cumulative per session, the net line is `callNet − putNet` (bullish-positive, the same convention as `whale market netflow`), and per-bucket net premium prints as faint columns.
+- **Directional delta pane:** `Σ delta × size × 100 × sign` over sided prints. Delta comes from the chain snapshot's greeks when the run has them, otherwise Black-Scholes from the print's own NBBO mid (IV solved), spot, strike, and time to expiry; a print with no derivable delta is excluded from this series and counted as missing, never guessed. The payload's `deltaSource` states the split in words.
+- **Net volume pane:** buy contracts minus sell contracts, per bucket and cumulative.
+- **GEX levels (toggle, off by default):** per-strike net GEX from the current chain drawn as bars anchored to the price axis, zero-gamma dashed; a strip under the chart carries the dealer-convention assumption, the pricing line, and how many strikes are in view (and says "zoom out" when none are).
+
+Buckets are one minute by default (`flowSeries.bucketMs`), values reset per session date, and the series persist in the flight recorder, so the session picker offers today live plus every recorded session, and a replayed tape reproduces the same buckets byte for byte (tested). Live updates arrive over the same `/ws` stream the flow table uses; nothing rebuilds. `GET /api/flow/:underlying/series?session=` and MCP `whale_flow_series` serve the same buckets with the same `note`, which says exactly what is and is not included.
+
 ## Market structure
 
 `whale market` reads the flight recorder's daily-history layer (the tables live sessions and `whale backfill` fold) and answers four structural questions, each output stating its window and its caveats:
@@ -303,7 +328,7 @@ Measurement, not advice: the framing is load-bearing and the tool enforces it. H
 
 ## Agent-native: the MCP server
 
-`@luxalgo/whale-mcp` exposes the flight recorder to any MCP client over stdio or local HTTP. Thirteen tools:
+`@luxalgo/whale-mcp` exposes the flight recorder to any MCP client over stdio or local HTTP. Sixteen tools:
 
 | Tool | What it answers |
 |---|---|
@@ -320,12 +345,15 @@ Measurement, not advice: the framing is load-bearing and the tool enforces it. H
 | `whale_net_flow` | Net premium flow leaderboard per underlying; emitted events only, sign convention in the note |
 | `whale_audit` | Calibrate recorded scores against forward underlying moves; a measurement of your own tape, caveats always attached |
 | `whale_short_volume` | Cached FINRA daily short-sale volume; end-of-day context, read from the local cache only |
+| `whale_flow_series` | The per-print flow series behind the chart tab: bucketed net premium, directional delta, net volume; no premium floor, delta source and exclusions stated in the note |
+| `whale_bars` | Underlying bars from the spot tape (the prints' own spot observations); the source is stated because they are not exchange bars |
+| `whale_gex_heatmap` | The strike-by-expiry GEX grid with totals and zero-gamma, re-priceable at a live spot; convention assumption and pricing line in the payload |
 
 The demo moment: ask your agent *"anything sweeping NVDA today? how big a deal is it, and show your work."* It calls `whale_status`, pulls `whale_top`, and answers from the components (premium percentile, volume against open interest, aggression, what was missing and renormalized) instead of reciting a number, then offers the leg-by-leg audit trail. Setup and the full tool reference: [docs/mcp.md](docs/mcp.md).
 
 ## Dashboard
 
-A thin local web UI: live flow table with filters, an event drawer showing the full score breakdown and reasons trail, and the GEX ladder (both pictured above). A market tab renders the `whale market` analytics with the same notes the CLI prints. An audit tab renders the calibration report, caveats inline. A playback tab steps through a recorded window event by event. It is served by the engine itself at its port (default `http://127.0.0.1:8787`) whenever `whale run` is up; there is no separate process and no separate state. The engine is the product; the UI is a window.
+A thin local web UI: live flow table with filters, an event drawer showing the full score breakdown and reasons trail, the chart tab (candles, per-print flow panes, event markers, GEX levels; drawn by [Vela](https://github.com/LuxAlgo/Vela), loaded on first visit), and the GEX ladder with its heatmap (all pictured above). A market tab renders the `whale market` analytics with the same notes the CLI prints. An audit tab renders the calibration report, caveats inline. A playback tab steps through a recorded window event by event. It is served by the engine itself at its port (default `http://127.0.0.1:8787`) whenever `whale run` is up; there is no separate process and no separate state. The engine is the product; the UI is a window.
 
 ## What it deliberately does not do
 
@@ -347,7 +375,7 @@ Whale Options is an independent project by [LuxAlgo](https://luxalgo.com). It is
 | `@luxalgo/whale-core` | The pure engine: normalize → classify → score → emit, plus feeds, greeks, alerts, and the flight recorder |
 | `@luxalgo/whale-cli` | `whale run · replay · backfill · audit · market · context · compare · gex · events · rules · bench` |
 | `@luxalgo/whale-mcp` | Local MCP server over your flight recorder |
-| `@luxalgo/whale-dashboard` | Minimal local web UI |
+| `@luxalgo/whale-dashboard` | Minimal local web UI (charts by [Vela](https://github.com/LuxAlgo/Vela), Apache-2.0; see [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md)) |
 
 ## Documentation
 
@@ -362,7 +390,7 @@ Whale Options is an independent project by [LuxAlgo](https://luxalgo.com). It is
 | [docs/context.md](docs/context.md) | FINRA short-sale volume: what the data is and is not, syncing, the standing note |
 | [docs/compare.md](docs/compare.md) | Feed cross-validation: diffing two feeds over the same window |
 | [docs/alerts.md](docs/alerts.md) | Rule schema, sinks, webhook templates, the audit trail |
-| [docs/mcp.md](docs/mcp.md) | MCP server setup and the thirteen-tool reference |
+| [docs/mcp.md](docs/mcp.md) | MCP server setup and the sixteen-tool reference |
 
 ## Development
 

@@ -5,6 +5,7 @@
 */
 
 import type { AlertRule } from "../config.js";
+import type { FlowBucketRow } from "../flow/series.js";
 import { type BaselineDayRows, BaselineState } from "../score/baselines.js";
 import type {
   ChainSnapshot,
@@ -33,6 +34,7 @@ export class MemoryFlightRecorder implements FlightRecorder {
   private contractDaily = new Map<string, ContractDailyRow>();
   private underlyingDaily = new Map<string, UnderlyingDailyRow>();
   private shortVolume = new Map<string, ShortVolumeRow>();
+  private flowBuckets = new Map<string, FlowBucketRow>();
   private rules = new Map<string, StoredRule>();
   private alerts: FiredAlert[] = [];
   private heartbeatTs: number | null = null;
@@ -212,6 +214,35 @@ export class MemoryFlightRecorder implements FlightRecorder {
         ),
       }))
       .sort((a, b) => Math.abs(b.netPremium) - Math.abs(a.netPremium));
+  }
+
+  upsertFlowBuckets(rows: FlowBucketRow[]): void {
+    for (const r of rows) {
+      this.flowBuckets.set(`${r.underlying.toUpperCase()}|${r.sessionDate}|${r.ts}`, { ...r });
+    }
+  }
+
+  getFlowBuckets(underlying: string, sessionDate: string): FlowBucketRow[] {
+    return [...this.flowBuckets.values()]
+      .filter((r) => r.underlying === underlying.toUpperCase() && r.sessionDate === sessionDate)
+      .sort((a, b) => a.ts - b.ts)
+      .map((r) => ({ ...r }));
+  }
+
+  flowSessionDates(underlying?: string): string[] {
+    const dates = new Set<string>();
+    for (const r of this.flowBuckets.values()) {
+      if (!underlying || r.underlying === underlying.toUpperCase()) dates.add(r.sessionDate);
+    }
+    return [...dates].sort();
+  }
+
+  flowUnderlyings(sessionDate?: string): string[] {
+    const out = new Set<string>();
+    for (const r of this.flowBuckets.values()) {
+      if (!sessionDate || r.sessionDate === sessionDate) out.add(r.underlying);
+    }
+    return [...out].sort();
   }
 
   listRules(): StoredRule[] {

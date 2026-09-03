@@ -14,5 +14,9 @@ export default defineConfig({
   },
   build: {
     outDir: "dist",
+    // The chart tab's chunk (Vela + the chart module) is loaded on demand and
+    // sits well above Vite's default 500 kB advisory; the main bundle stays
+    // where it was. Raise the advisory rather than silence real regressions.
+    chunkSizeWarningLimit: 900,
   },
 });
