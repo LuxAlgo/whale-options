@@ -90,6 +90,7 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
   // down and mounts a fresh one so bars and panes never bleed across names.
   // Timeframe changes reach the existing chart through setBars instead.
   const identity = `${underlying ?? ""}|${session ?? ""}`;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: `identity` is the remount key — a market switch must tear the chart down and mount a fresh one
   useEffect(() => {
     const host = hostRef.current;
     if (!host) return;
