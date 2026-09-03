@@ -12,8 +12,8 @@
       time and spot, sized by premium, colored by side, calls above / puts
       below, with hover cards and click-through to the event drawer,
     - a renderer layer painting per-strike net GEX as bars anchored to the
-      price axis with the zero-gamma level dashed and the convention in a
-      small legend.
+      price axis with the zero-gamma level dashed; the convention and pricing
+      legend lives in the view under the chart, never over the candles.
 
   Vela's attribution mark stays on — the library's NOTICE asks for it.
 */
@@ -51,7 +51,14 @@ const SELL = "#f87171";
 const UNSIDED = "#71717a";
 const NET = "#e4e4e7";
 const AMBER = "#fbbf24";
-const SKY = "#38bdf8";
+
+// Vela's pane legends and axes print raw values; the panes therefore plot in
+// human units — dollars in millions, deltas and contracts in thousands — and
+// say so in their titles. The React view prints the exact figures with the
+// dashboard's own money/int helpers beneath the chart.
+export const PREMIUM_UNIT = 1_000_000;
+export const DELTA_UNIT = 1_000;
+export const VOLUME_UNIT = 1_000;
 
 const MARKERS_LAYER = "whale-flow-markers";
 const GEX_LAYER = "whale-gex-levels";
@@ -65,6 +72,8 @@ export interface FlowChartHandle {
   setMarkers(events: FlowEvent[]): void;
   /** null hides the layer. */
   setGexLevels(ladder: GexLadder | null): void;
+  /** Strikes of the GEX ladder inside the visible price range, as the layer repaints. */
+  onGexView(cb: (view: GexView) => void): void;
   destroy(): void;
 }
 
@@ -93,9 +102,10 @@ function pointsOf(
   points: FlowPoint[],
   pick: (p: FlowPoint) => number,
   colorBy?: (p: FlowPoint) => string,
+  unit = 1,
 ): SeriesPoint[] {
   return points.map((p) => {
-    const value = pick(p);
+    const value = Math.round((pick(p) / unit) * 1000) / 1000;
     return colorBy ? { time: p.time, value, color: colorBy(p) } : { time: p.time, value };
   });
 }
@@ -119,38 +129,39 @@ function seriesFor(
       series: [
         {
           id: `${type}:net-bucket`,
-          title: "net premium / bucket",
+          title: "net premium / bucket, $M",
           paneId: type,
           kind: "histogram",
           points: pointsOf(
             points,
             (p) => p.netPremium,
             (p) => (p.netPremium >= 0 ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)"),
+            PREMIUM_UNIT,
           ),
           style: { ...lineStyle("#52525b"), base: 0 },
         },
         {
           id: `${type}:calls`,
-          title: "calls, cumulative",
+          title: "calls, cumulative, $M",
           paneId: type,
           kind: "line",
-          points: pointsOf(points, (p) => p.cumCallNet),
+          points: pointsOf(points, (p) => p.cumCallNet, undefined, PREMIUM_UNIT),
           style: lineStyle(BUY),
         },
         {
           id: `${type}:puts`,
-          title: "puts, cumulative",
+          title: "puts, cumulative, $M",
           paneId: type,
           kind: "line",
-          points: pointsOf(points, (p) => p.cumPutNet),
+          points: pointsOf(points, (p) => p.cumPutNet, undefined, PREMIUM_UNIT),
           style: lineStyle(SELL),
         },
         {
           id: `${type}:net`,
-          title: "net, cumulative",
+          title: "net, cumulative, $M",
           paneId: type,
           kind: "line",
-          points: pointsOf(points, (p) => p.cumNetPremium),
+          points: pointsOf(points, (p) => p.cumNetPremium, undefined, PREMIUM_UNIT),
           style: lineStyle(NET, 2),
         },
       ],
@@ -162,25 +173,27 @@ function seriesFor(
       series: [
         {
           id: `${type}:bucket`,
-          title: "directional delta / bucket",
+          title: "directional delta / bucket, thousands",
           paneId: type,
           kind: "histogram",
           points: pointsOf(
             points,
             (p) => p.directionalDelta,
             (p) => (p.directionalDelta >= 0 ? "rgba(52,211,153,0.35)" : "rgba(248,113,113,0.35)"),
+            DELTA_UNIT,
           ),
           style: { ...lineStyle("#52525b"), base: 0 },
         },
         {
           id: `${type}:cum`,
-          title: "directional delta, cumulative",
+          title: "directional delta, cumulative, thousands",
           paneId: type,
           kind: "line",
           points: pointsOf(
             points,
             (p) => p.cumDirectionalDelta,
             (p) => signColor(p.cumDirectionalDelta),
+            DELTA_UNIT,
           ),
           style: lineStyle(NET, 2),
         },
@@ -192,22 +205,23 @@ function seriesFor(
     series: [
       {
         id: `${type}:bucket`,
-        title: "net volume / bucket",
+        title: "net volume / bucket, K contracts",
         paneId: type,
         kind: "histogram",
         points: pointsOf(
           points,
           (p) => p.netVolume,
           (p) => (p.netVolume >= 0 ? "rgba(52,211,153,0.55)" : "rgba(248,113,113,0.55)"),
+          VOLUME_UNIT,
         ),
         style: { ...lineStyle("#52525b"), base: 0 },
       },
       {
         id: `${type}:cum`,
-        title: "net volume, cumulative",
+        title: "net volume, cumulative, K contracts",
         paneId: type,
         kind: "line",
-        points: pointsOf(points, (p) => p.cumNetVolume),
+        points: pointsOf(points, (p) => p.cumNetVolume, undefined, VOLUME_UNIT),
         style: lineStyle(NET, 2),
       },
     ],
@@ -230,9 +244,9 @@ function ensureRegistered(): void {
   registered = true;
 
   const panes: Array<[string, string, string]> = [
-    [PANE_NET_PREMIUM, "Net premium (every print)", "net premium"],
-    [PANE_DELTA, "Directional delta (Σ δ × size × 100 × side)", "dir. delta"],
-    [PANE_NET_VOLUME, "Net volume (buy − sell contracts)", "net volume"],
+    [PANE_NET_PREMIUM, "Net premium, $M (every print)", "net premium $M"],
+    [PANE_DELTA, "Directional delta, thousands (Σ δ × size × 100 × side)", "dir. delta K"],
+    [PANE_NET_VOLUME, "Net volume, K contracts (buy − sell)", "net volume K"],
   ];
   for (const [type, title, shortTitle] of panes) {
     registerNativeIndicator({
@@ -299,10 +313,10 @@ interface MarkersInstance {
 const markerInstances = new Set<MarkersInstance>();
 const HIT_PX = 10;
 
-/** Premium → marker radius in px: $10K reads, $5M stands out, nothing dominates. */
+/** Premium → marker radius in px: $10K reads, $5M stands out, nothing buries the candles. */
 function markerRadius(premium: number): number {
-  const r = 3 + 2.4 * Math.log10(Math.max(1, premium / 10_000));
-  return Math.max(3, Math.min(12, r));
+  const r = 2.5 + 1.9 * Math.log10(Math.max(1, premium / 10_000));
+  return Math.max(2.5, Math.min(9, r));
 }
 
 function sideColor(side: FlowEvent["side"]): string {
@@ -383,11 +397,11 @@ function createMarkersLayer() {
       for (const m of painted) {
         drawShape(ctx, m.event.kind, m.x, m.y, m.r, m.event.right === "C");
         ctx.fillStyle = sideColor(m.event.side);
-        ctx.globalAlpha = m.event.side === "buy" || m.event.side === "sell" ? 0.9 : 0.6;
+        ctx.globalAlpha = m.event.side === "buy" || m.event.side === "sell" ? 0.7 : 0.45;
         ctx.fill();
         ctx.globalAlpha = 1;
-        ctx.lineWidth = 1;
-        ctx.strokeStyle = "rgba(0,0,0,0.5)";
+        ctx.lineWidth = 0.75;
+        ctx.strokeStyle = "rgba(9,9,11,0.6)";
         ctx.stroke();
       }
 
@@ -479,6 +493,21 @@ interface GexPayload {
   ladder: GexLadder | null;
 }
 
+export interface GexView {
+  inView: number;
+  total: number;
+}
+
+/** The React view's listener: how many of the ladder's strikes the visible price range holds. */
+let gexViewListener: ((view: GexView) => void) | null = null;
+let lastGexView: GexView | null = null;
+
+function reportGexView(view: GexView): void {
+  if (lastGexView && lastGexView.inView === view.inView && lastGexView.total === view.total) return;
+  lastGexView = view;
+  gexViewListener?.(view);
+}
+
 function createGexLayer() {
   let canvas: HTMLCanvasElement | null = null;
   return {
@@ -494,7 +523,10 @@ function createGexLayer() {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, coords.width, coords.height);
       const ladder = (args.data as GexPayload | undefined)?.ladder;
-      if (!ladder || ladder.perStrike.length === 0) return;
+      if (!ladder || ladder.perStrike.length === 0) {
+        reportGexView({ inView: 0, total: ladder?.perStrike.length ?? 0 });
+        return;
+      }
 
       const maxAbs = Math.max(1, ...ladder.perStrike.map((r) => Math.abs(r.netGex)));
       const maxLen = coords.width * 0.22;
@@ -539,35 +571,7 @@ function createGexLayer() {
         ctx.fillText(`zero-gamma ${ladder.zeroGamma.level.toFixed(2)}`, 6, y - 4);
       }
 
-      // Legend: the assumption travels with the bars, always.
-      const legend = [
-        `GEX per 1% move · ${inView} of ${ladder.perStrike.length} strikes in view · ${ladder.convention}`,
-        `assumption: ${ladder.conventionNote.split(".")[0]}`,
-        ladder.pricing.note,
-      ];
-      ctx.textAlign = "left";
-      const pad = 6;
-      const lineH = 13;
-      const w = Math.min(
-        coords.width - 8,
-        Math.max(...legend.map((l) => ctx.measureText(l).width)) + pad * 2,
-      );
-      const h = legend.length * lineH + pad * 2 - 3;
-      const bx = 4;
-      const by = bounds.top + bounds.height - h - 6;
-      ctx.fillStyle = "rgba(24,24,27,0.92)";
-      ctx.beginPath();
-      ctx.roundRect(bx, by, w, h, 3);
-      ctx.fill();
-      ctx.strokeStyle = "rgba(251,191,36,0.35)";
-      ctx.stroke();
-      legend.forEach((line, i) => {
-        ctx.fillStyle = i === 0 ? SKY : i === 1 ? AMBER : "#a1a1aa";
-        let text = line;
-        while (text.length > 8 && ctx.measureText(text).width > w - pad * 2)
-          text = `${text.slice(0, -2)}…`;
-        ctx.fillText(text, bx + pad, by + pad + 9 + i * lineH);
-      });
+      reportGexView({ inView, total: ladder.perStrike.length });
     },
     destroy() {
       canvas = null;
@@ -664,10 +668,17 @@ export function createFlowChart(host: HTMLElement, opts: FlowChartOptions): Flow
     },
     setGexLevels(ladder) {
       gex = ladder;
+      lastGexView = null;
       pushLayers();
+    },
+    onGexView(cb) {
+      gexViewListener = cb;
+      lastGexView = null;
     },
     destroy() {
       disposed = true;
+      gexViewListener = null;
+      lastGexView = null;
       host.removeEventListener("click", onClick);
       paneState.points = [];
       chart?.destroy();

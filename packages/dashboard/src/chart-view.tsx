@@ -21,7 +21,7 @@ import {
   useLiveGex,
   useSessionEvents,
 } from "./use-chart-data.js";
-import type { FlowChartHandle } from "./vela-chart.js";
+import type { FlowChartHandle, GexView } from "./vela-chart.js";
 
 const TIMEFRAMES: Array<{ tf: string; label: string; ms: number }> = [
   { tf: "1m", label: "1m", ms: 60_000 },
@@ -31,6 +31,42 @@ const TIMEFRAMES: Array<{ tf: string; label: string; ms: number }> = [
 
 /** Vela's timeframe token is bare minutes. */
 const velaTimeframe = (tf: string) => tf.replace(/m$/, "");
+
+const MARKER_KINDS = ["sweep", "block", "split"] as const;
+type MarkerKind = (typeof MARKER_KINDS)[number];
+
+/** Which emitted events get a marker. Default: the session's 40 largest prints by premium. */
+interface MarkerFilter {
+  kinds: Record<MarkerKind, boolean>;
+  minScore: string;
+  minPremium: string;
+  /** Keep only the N largest by premium; null = every event that passes the other filters. */
+  top: number | null;
+}
+
+const DEFAULT_TOP = 40;
+const DEFAULT_MARKER_FILTER: MarkerFilter = {
+  kinds: { sweep: true, block: true, split: true },
+  minScore: "",
+  minPremium: "",
+  top: DEFAULT_TOP,
+};
+
+function filterMarkers(events: FlowEvent[], f: MarkerFilter): FlowEvent[] {
+  const minScore = f.minScore.trim() === "" ? null : Number(f.minScore);
+  const minPremium = f.minPremium.trim() === "" ? null : Number(f.minPremium);
+  let kept = events.filter(
+    (e) =>
+      f.kinds[e.kind as MarkerKind] !== false &&
+      (minScore === null || !Number.isFinite(minScore) || e.score.total >= minScore) &&
+      (minPremium === null || !Number.isFinite(minPremium) || e.premium >= minPremium),
+  );
+  if (f.top !== null && kept.length > f.top) {
+    kept = [...kept].sort((a, b) => b.premium - a.premium || a.ts - b.ts).slice(0, f.top);
+    kept.sort((a, b) => a.ts - b.ts || a.seq - b.seq);
+  }
+  return kept;
+}
 
 export function ChartView({ status, active }: { status: EngineStatus | null; active: boolean }) {
   const sessions = useFlowSessions();
@@ -64,6 +100,8 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
   const [tfIndex, setTfIndex] = useState(0);
   const tf = TIMEFRAMES[tfIndex] ?? TIMEFRAMES[0]!;
   const [gexOn, setGexOn] = useState(false);
+  const [gexView, setGexView] = useState<GexView | null>(null);
+  const [markerFilter, setMarkerFilter] = useState<MarkerFilter>(DEFAULT_MARKER_FILTER);
   const [selected, setSelected] = useState<FlowEvent | null>(null);
 
   const flow = useFlowSeries(underlying, session, live && active);
@@ -74,6 +112,7 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
 
   const points = useMemo(() => buildFlowPoints(flow.buckets, tf.ms), [flow.buckets, tf.ms]);
   const counts = useMemo(() => flowCounts(flow.buckets), [flow.buckets]);
+  const marked = useMemo(() => filterMarkers(events, markerFilter), [events, markerFilter]);
 
   // The chart itself: one handle per mount, Vela loaded lazily; data flows
   // through setters so nothing rebuilds on live updates.
@@ -106,6 +145,7 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
             if (hit) setSelected(hit);
           },
         });
+        handleRef.current.onGexView(setGexView);
         setChartReady(true);
       })
       .catch((err: unknown) => {
@@ -125,11 +165,14 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
     if (chartReady) handleRef.current?.setFlow(points);
   }, [chartReady, points]);
   useEffect(() => {
-    if (chartReady) handleRef.current?.setMarkers(events);
-  }, [chartReady, events]);
+    if (chartReady) handleRef.current?.setMarkers(marked);
+  }, [chartReady, marked]);
   useEffect(() => {
+    if (!gexOn) setGexView(null);
     if (chartReady) handleRef.current?.setGexLevels(gexOn ? gex.ladder : null);
   }, [chartReady, gexOn, gex.ladder]);
+  const setMarker = <K extends keyof MarkerFilter>(key: K, value: MarkerFilter[K]) =>
+    setMarkerFilter((prev) => ({ ...prev, [key]: value }));
 
   const field =
     "rounded border border-zinc-800 bg-zinc-900 px-2 py-1 text-xs text-zinc-200 focus:border-zinc-600 focus:outline-none";
@@ -220,8 +263,7 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
         )}
         <span className="ml-auto text-[10px] text-zinc-600">
           {live ? "live session" : "recorded session"} · {int(bars.bars.length)} bars ·{" "}
-          {int(counts.prints)} prints · {int(events.length)} events marked
-          {lastPoint ? ` · net premium ${signedMoney(lastPoint.cumNetPremium)}` : ""}
+          {int(counts.prints)} prints · {int(marked.length)} of {int(events.length)} events marked
         </span>
       </div>
 
@@ -241,6 +283,88 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
           </div>
         )}
       </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-[10px] text-zinc-500">
+        <span className="uppercase tracking-wide">markers</span>
+        {MARKER_KINDS.map((kind) => (
+          <label key={kind} className="flex cursor-pointer items-center gap-1 text-zinc-400">
+            <input
+              type="checkbox"
+              checked={markerFilter.kinds[kind]}
+              onChange={(e) =>
+                setMarker("kinds", { ...markerFilter.kinds, [kind]: e.target.checked })
+              }
+              className="accent-zinc-400"
+            />
+            {kind}
+          </label>
+        ))}
+        <input
+          value={markerFilter.minScore}
+          onChange={(e) => setMarker("minScore", e.target.value)}
+          placeholder="min score"
+          inputMode="numeric"
+          aria-label="marker minimum whale score"
+          className={`w-20 ${field}`}
+        />
+        <input
+          value={markerFilter.minPremium}
+          onChange={(e) => setMarker("minPremium", e.target.value)}
+          placeholder="min premium $"
+          inputMode="numeric"
+          aria-label="marker minimum premium in dollars"
+          className={`w-28 ${field}`}
+        />
+        <button
+          type="button"
+          onClick={() => setMarker("top", markerFilter.top === null ? DEFAULT_TOP : null)}
+          aria-pressed={markerFilter.top === null}
+          className={`rounded border px-2 py-1 text-xs ${
+            markerFilter.top === null
+              ? "border-zinc-600 bg-zinc-800 text-zinc-100"
+              : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200"
+          }`}
+        >
+          {markerFilter.top === null ? `show top ${DEFAULT_TOP} by premium` : "show all"}
+        </button>
+        <span>
+          {int(marked.length)} of {int(events.length)} events marked
+          {markerFilter.top !== null && events.length > markerFilter.top
+            ? ` (the ${markerFilter.top} largest by premium that pass the filters)`
+            : ""}
+        </span>
+      </div>
+
+      {lastPoint && (
+        <p className="text-[10px] leading-4 text-zinc-400">
+          <span className="text-zinc-500">session so far</span> · calls{" "}
+          <Signed v={lastPoint.cumCallNet} /> · puts <Signed v={lastPoint.cumPutNet} /> · net
+          premium <Signed v={lastPoint.cumNetPremium} /> · directional delta{" "}
+          <span
+            className={lastPoint.cumDirectionalDelta >= 0 ? "text-emerald-400" : "text-red-400"}
+          >
+            {signedCompact(lastPoint.cumDirectionalDelta)}
+          </span>{" "}
+          · net volume{" "}
+          <span className={lastPoint.cumNetVolume >= 0 ? "text-emerald-400" : "text-red-400"}>
+            {signedCompact(lastPoint.cumNetVolume)} contracts
+          </span>{" "}
+          <span className="text-zinc-600">
+            (panes plot premium in $M, delta and contracts in thousands)
+          </span>
+        </p>
+      )}
+
+      {gexOn && (
+        <p className="rounded border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[10px] leading-4 text-amber-200/80">
+          <span className="mr-1 font-bold uppercase text-amber-400/90">GEX levels</span>
+          {gex.error
+            ? `unavailable: ${gex.error}`
+            : gex.ladder
+              ? `${gexView ? `${int(gexView.inView)} of ${int(gexView.total)} strikes in view${gexView.inView === 0 ? " — zoom out to see the bars" : ""}` : "painting…"} · per 1% move · convention "${gex.ladder.convention}" (${gex.ladder.conventionNote.split(".")[0]}; an assumption, flip via config gexConvention) · ${gex.ladder.pricing.note}${gex.ladder.pricing.repricedTs !== null ? ` · last re-priced ${etDateTime(gex.ladder.pricing.repricedTs)} ET` : ""}`
+              : "loading the chain…"}
+        </p>
+      )}
 
       <div className="space-y-1 text-[10px] leading-4 text-zinc-500">
         <p>
@@ -285,4 +409,18 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
       {selected && <EventDrawer seed={selected} onClose={() => setSelected(null)} />}
     </div>
   );
+}
+
+function Signed({ v }: { v: number }) {
+  const cls = v > 0 ? "text-emerald-400" : v < 0 ? "text-red-400" : "text-zinc-500";
+  return <span className={cls}>{signedMoney(v)}</span>;
+}
+
+/** Signed compact count: +35.9K, -758.8K, +1.2M. */
+function signedCompact(v: number): string {
+  const sign = v < 0 ? "-" : "+";
+  const abs = Math.abs(v);
+  if (abs >= 1_000_000) return `${sign}${(abs / 1_000_000).toFixed(2)}M`;
+  if (abs >= 1_000) return `${sign}${(abs / 1_000).toFixed(1)}K`;
+  return `${sign}${Math.round(abs)}`;
 }
