@@ -50,6 +50,8 @@ export { ThetadataFeed, type ThetadataOptions } from "./feeds/thetadata.js";
 export { TradierFeed, type TradierOptions } from "./feeds/tradier.js";
 // Feeds
 export type { FeedAdapter, FeedCapabilities, RawOptionTrade, TradeFilter } from "./feeds/types.js";
+// Per-print flow series (the chart's data spine)
+export * from "./flow/index.js";
 // Greeks & GEX
 export {
   type BsInput,

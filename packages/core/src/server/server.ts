@@ -13,14 +13,18 @@ import { type WebSocket, WebSocketServer } from "ws";
 import { AUDIT_HORIZONS, type AuditHorizon, calibrate } from "../audit/index.js";
 import { alertRuleSchema, type WhaleConfig } from "../config.js";
 import { shortVolumeReport } from "../context/index.js";
+import { type FlowBucketRow, flowSeriesPayload, resampleFlowBuckets } from "../flow/series.js";
 import { computeGex } from "../greeks/gex.js";
 import { ivRank, maxPain, netFlowReport, oiDeltas } from "../market/index.js";
 import type { FlightRecorder } from "../store/types.js";
 import type { EventKind, FlowEvent, Side } from "../types.js";
+import { sessionDateOf } from "../util/session.js";
 
 export interface WhaleServer {
   listen(): Promise<{ host: string; port: number }>;
   broadcast(event: FlowEvent): void;
+  /** Push per-print flow buckets (the chart's live series) onto /ws. */
+  broadcastFlow(rows: FlowBucketRow[]): void;
   close(): Promise<void>;
 }
 
@@ -123,6 +127,46 @@ export function createWhaleServer(opts: {
         return;
       }
       sendJson(res, 200, { gex: ladder });
+      return;
+    }
+
+    // Per-print flow series — the chart tab's data spine. Sessions first (the
+    // date picker), then one underlying's session, optionally re-bucketed.
+    if (req.method === "GET" && path === "/api/flow/sessions") {
+      const underlying = url.searchParams.get("underlying") ?? undefined;
+      const today = sessionDateOf(Date.now());
+      const sessions = store.flowSessionDates(underlying);
+      sendJson(res, 200, {
+        sessions,
+        today,
+        underlyings: store.flowUnderlyings(url.searchParams.get("session") ?? undefined),
+        note: "recorded sessions with per-print flow buckets; `today` is the live session date (America/New_York) whether or not it has buckets yet",
+      });
+      return;
+    }
+
+    const flowMatch = /^\/api\/flow\/([A-Za-z0-9.]+)\/series$/.exec(path);
+    if (req.method === "GET" && flowMatch?.[1]) {
+      const underlying = flowMatch[1].toUpperCase();
+      const q = url.searchParams;
+      const sessionDate = q.get("session") ?? sessionDateOf(Date.now());
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(sessionDate)) {
+        sendJson(res, 400, { error: "session must be an ISO date, e.g. 2026-08-24" });
+        return;
+      }
+      const rows = store.getFlowBuckets(underlying, sessionDate);
+      const stored = rows[0]?.bucketMs ?? config.flowSeries.bucketMs;
+      const bucketMs = numberParam(q.get("bucket")) ?? stored;
+      let resampled: FlowBucketRow[];
+      try {
+        resampled = resampleFlowBuckets(rows, bucketMs);
+      } catch (err) {
+        sendJson(res, 400, { error: err instanceof Error ? err.message : String(err) });
+        return;
+      }
+      sendJson(res, 200, {
+        series: flowSeriesPayload(underlying, sessionDate, resampled, bucketMs),
+      });
       return;
     }
 
@@ -273,6 +317,13 @@ export function createWhaleServer(opts: {
     broadcast: (event: FlowEvent) => {
       if (sockets.size === 0) return;
       const payload = JSON.stringify({ type: "event", event });
+      for (const socket of sockets) {
+        if (socket.readyState === socket.OPEN) socket.send(payload);
+      }
+    },
+    broadcastFlow: (rows: FlowBucketRow[]) => {
+      if (sockets.size === 0 || rows.length === 0) return;
+      const payload = JSON.stringify({ type: "flow", buckets: rows });
       for (const socket of sockets) {
         if (socket.readyState === socket.OPEN) socket.send(payload);
       }

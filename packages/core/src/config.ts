@@ -220,6 +220,13 @@ export const configSchema = z.object({
       rules: z.array(alertRuleSchema).default([]),
     })
     .default({}),
+  /** Per-print flow series (flow/series.ts): bucket width for the intraday
+   *  net-premium / directional-delta / net-volume / spot-tape series. */
+  flowSeries: z
+    .object({
+      bucketMs: z.number().int().min(1_000).default(60_000),
+    })
+    .default({}),
   store: z
     .object({
       driver: z.enum(["sqlite", "memory"]).default("sqlite"),

@@ -13,6 +13,7 @@ import type { WhaleConfig } from "./config.js";
 import { Engine } from "./engine.js";
 import type { TapeWriter } from "./feeds/replay.js";
 import type { FeedAdapter } from "./feeds/types.js";
+import { deltaLookupFromChains, type FlowBucketRow, FlowSeriesAggregator } from "./flow/series.js";
 import { normalizeTrade } from "./normalize/normalize.js";
 import type { FlightRecorder } from "./store/types.js";
 import type { ChainSnapshot, EngineStats, FlowEvent, Nbbo, OptionTradeTick } from "./types.js";
@@ -25,6 +26,8 @@ export interface RunnerOptions {
   signal?: AbortSignal;
   onEvent?: (event: FlowEvent) => void;
   onTick?: (tick: OptionTradeTick) => void;
+  /** Per-print flow buckets touched since the last call (throttled to ~1/s live). */
+  onFlowBuckets?: (rows: FlowBucketRow[]) => void;
   record?: TapeWriter;
   /** Pure tape replay: no enrichment, no alerts, no persistence of ticks. */
   replayMode?: boolean;
@@ -72,6 +75,21 @@ export async function runEngine(options: RunnerOptions): Promise<RunSummary> {
   const nbboCache = new TtlCache<Nbbo | null>(2_000);
   const spotCache = new TtlCache<number | null>(30_000);
   const oiByContract = new Map<string, number>();
+  const chainsByUnderlying = new Map<string, ChainSnapshot>();
+
+  // Per-print flow series: every normalized tick, floor or no floor. Delta
+  // prefers the chain snapshot's greeks (live runs that have them), else
+  // Black-Scholes over the tick's own fields — the lookup is rebuilt on each
+  // chain refresh and is empty in replay mode, where no chain exists.
+  let deltaLookup = deltaLookupFromChains([]);
+  const flow = new FlowSeriesAggregator({
+    bucketMs: config.flowSeries.bucketMs,
+    nbboStaleMs: config.engine.nbboStaleMs,
+    r: config.greeks.r,
+    q: config.greeks.q,
+    qByUnderlying: config.greeks.qByUnderlying,
+    deltaLookup: (tick) => deltaLookup(tick),
+  });
 
   const refreshChains = async () => {
     for (const underlying of config.universe.underlyings) {
@@ -80,6 +98,7 @@ export async function runEngine(options: RunnerOptions): Promise<RunSummary> {
         if (!snap) continue;
         store.upsertChainSnapshot(snap);
         foldChainToDaily(store, snap);
+        chainsByUnderlying.set(snap.underlying, snap);
         for (const c of snap.contracts) {
           if (c.oi !== null && c.oi !== undefined) oiByContract.set(c.contract, c.oi);
         }
@@ -87,8 +106,21 @@ export async function runEngine(options: RunnerOptions): Promise<RunSummary> {
         // A missing chain degrades vol/OI and GEX for that name; the tape keeps flowing.
       }
     }
+    deltaLookup = deltaLookupFromChains(chainsByUnderlying.values());
   };
-  if (!replayMode) await refreshChains();
+  if (!replayMode) {
+    await refreshChains();
+    // A run restarted mid-session continues its flow series instead of
+    // resetting them: the buckets already on disk for today's session seed
+    // the aggregator (same bucket width only — a changed width starts clean).
+    const today = sessionDateOf(Date.now());
+    for (const underlying of new Set([
+      ...config.universe.underlyings,
+      ...store.flowUnderlyings(today),
+    ])) {
+      flow.hydrate(store.getFlowBuckets(underlying, today));
+    }
+  }
 
   let nextSeq = replayMode ? 0 : (store.maxTickSeq() ?? -1) + 1;
   let droppedTicks = 0;
@@ -97,6 +129,17 @@ export async function runEngine(options: RunnerOptions): Promise<RunSummary> {
 
   const tickBuffer: OptionTradeTick[] = [];
   const eventBuffer: FlowEvent[] = [];
+  let lastFlowPublishWall = 0;
+  // Dirty flow buckets → the store (live mode) and the live listener. Replay
+  // persists nothing, same as ticks; the aggregator still runs so a replayed
+  // tape yields the same series a live run would have.
+  const publishFlow = () => {
+    const rows = flow.drainDirty();
+    if (rows.length === 0) return;
+    if (!replayMode) store.upsertFlowBuckets(rows);
+    options.onFlowBuckets?.(rows);
+    lastFlowPublishWall = Date.now();
+  };
   const flushBuffers = () => {
     if (tickBuffer.length > 0) {
       store.insertTicks(tickBuffer.splice(0, tickBuffer.length));
@@ -104,6 +147,7 @@ export async function runEngine(options: RunnerOptions): Promise<RunSummary> {
     if (eventBuffer.length > 0) {
       store.insertEvents(eventBuffer.splice(0, eventBuffer.length));
     }
+    publishFlow();
   };
 
   const handleEvents = (events: FlowEvent[]) => {
@@ -123,6 +167,7 @@ export async function runEngine(options: RunnerOptions): Promise<RunSummary> {
     timers.push(
       setInterval(() => {
         if (Date.now() - lastArrivalWall > idleMs) handleEvents(engine.flush());
+        if (Date.now() - lastFlowPublishWall >= 1_000) publishFlow();
       }, 250),
     );
     timers.push(
@@ -177,6 +222,7 @@ export async function runEngine(options: RunnerOptions): Promise<RunSummary> {
         if (tickBuffer.length >= 500) flushBuffers();
       }
 
+      flow.push(tick);
       handleEvents(engine.push(tick));
     }
   } finally {

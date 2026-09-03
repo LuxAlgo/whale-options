@@ -144,6 +144,7 @@ export function registerRun(program: Command): void {
         store,
         record,
         signal: controller.signal,
+        onFlowBuckets: (rows) => server?.broadcastFlow(rows),
         onEvent: (event) => {
           server?.broadcast(event);
           if (flags.quiet) return;

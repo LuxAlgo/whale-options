@@ -21,6 +21,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@luxalgo/vela": "^0.6.15",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   },

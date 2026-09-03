@@ -6,6 +6,7 @@
   window of the tape through the current config.
 */
 import type { AlertRule } from "../config.js";
+import type { FlowBucketRow } from "../flow/series.js";
 import type { BaselineDayRows, BaselineState } from "../score/baselines.js";
 import type {
   ChainSnapshot,
@@ -141,6 +142,14 @@ export interface FlightRecorder {
 
   /** Net premium per underlying over a window, aggregated from emitted events. */
   netFlow(from: number, to: number): NetFlowRow[];
+
+  /** Per-print flow series buckets (flow/series.ts), keyed (underlying, session_date, ts). */
+  upsertFlowBuckets(rows: FlowBucketRow[]): void;
+  getFlowBuckets(underlying: string, sessionDate: string): FlowBucketRow[];
+  /** Session dates with recorded flow buckets, ascending (optionally one underlying). */
+  flowSessionDates(underlying?: string): string[];
+  /** Underlyings with recorded flow buckets, ascending (optionally one session). */
+  flowUnderlyings(sessionDate?: string): string[];
 
   listRules(): StoredRule[];
   upsertRule(rule: AlertRule, source: "config" | "dynamic"): void;
