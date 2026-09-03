@@ -1,6 +1,6 @@
 # MCP server (`@luxalgo/whale-mcp`)
 
-whale-mcp gives any MCP client — Claude Code, Claude Desktop, or anything else that speaks the protocol — eyes on **your local flight recorder**: recent flow, top-scored events with full score breakdowns, single-event stories with the exact NBBO each print was judged against, GEX ladders, alert rules, deterministic replay, market-structure analytics (OI deltas, max pain, IV rank, net flow), score calibration, and cached FINRA short-volume context.
+whale-mcp gives any MCP client — Claude Code, Claude Desktop, or anything else that speaks the protocol — eyes on **your local flight recorder**: recent flow, top-scored events with full score breakdowns, single-event stories with the exact NBBO each print was judged against, GEX ladders and the strike × expiry heatmap, alert rules, deterministic replay, market-structure analytics (OI deltas, max pain, IV rank, net flow), the per-print flow series and spot-tape bars behind the chart tab, score calibration, and cached FINRA short-volume context.
 
 **Local-only by design.** Market-data entitlements are personal licenses, so the engine and this server run on your machine, against your feed, for you. There is no hosted mode and no multi-tenant anything; nothing is redistributed, and there is no telemetry. MIT.
 
@@ -76,7 +76,7 @@ Precedence, highest wins: `--db` > `--config <file>` > `./whale.config.json` in 
 
 ## Tool reference
 
-Thirteen tools. Conventions that hold everywhere: premiums are dollars (price × size × 100, summed across legs); timestamps are epoch ms; scores run 0–100 and **always ship with their component breakdown** — transparency is the product; aggressor sides come from the NBBO stored at print time and `"unknown"` means the engine refused to guess. Honesty notes (window statements, statics-vs-predictions, emitted-events-only) ride in the payloads so agents can relay them — they are part of the result, not decoration.
+Sixteen tools. Conventions that hold everywhere: premiums are dollars (price × size × 100, summed across legs); timestamps are epoch ms; scores run 0–100 and **always ship with their component breakdown** — transparency is the product; aggressor sides come from the NBBO stored at print time and `"unknown"` means the engine refused to guess. Honesty notes (window statements, statics-vs-predictions, emitted-events-only) ride in the payloads so agents can relay them — they are part of the result, not decoration.
 
 > Every example response below comes from the seeded synthetic feed (`whale run --feed synthetic`) — no real market data appears in this document. Responses are truncated with `…` where long.
 
@@ -468,3 +468,39 @@ That answer cites every number it uses, keeps the cold-start caveat the engine i
 - **GEX sign convention is an assumption**, stated in every response and flippable in config. Summaries should keep saying so.
 - **Local-only, single-user.** No hosted mode, no multi-tenant anything, no auth layer — scope any `--host` widening accordingly.
 - **MIT, no telemetry.** The server phones home to no one; the only I/O is your SQLite file and your MCP client.
+
+### `whale_flow_series` — the whole tape, bucketed
+
+The per-print flow series for one underlying and session (the chart tab's panes): every normalized print — **the premium floor does not apply** — bucketed on the clock into signed call/put premium, `netPremium = callNet − putNet` (bullish-positive, the net-flow convention), `directionalDelta = Σ delta × size × 100 × sign`, `netVolume = buy − sell contracts`, their running cumulatives, and the spot tape from prints. Params: `underlying`, `session_date` (default the newest recorded session), `bucket_minutes` (1 stored; 5/15 re-bucket), `limit`. The payload's `deltaSource` says how many prints took their delta from chain-snapshot greeks vs Black-Scholes from the print's own NBBO mid/spot, and how many had none (excluded, counted); the `note` states every exclusion (mid/unknown sides and side-voiding conditions are counted, never signed; cancels counted, never retracted; the spot series is a tape from option prints, not exchange bars). Relay it.
+
+```json
+{ "name": "whale_flow_series", "arguments": { "underlying": "NVDA", "bucket_minutes": 5, "limit": 1 } }
+```
+
+```jsonc
+{
+  "underlying": "NVDA", "sessionDate": "2026-08-24", "bucketMs": 300000,
+  "buckets": [{ "ts": 1787578800000, "prints": 88, "sided": 71, "unsided": 17, "cancels": 0,
+    "callNet": 401220.5, "putNet": -96630, "netPremium": 497850.5, "directionalDelta": 8412.1163, "netVolume": 611,
+    "cumCallNet": 401220.5, "cumPutNet": -96630, "cumNetPremium": 497850.5, "…": "…",
+    "deltaFromChain": 0, "deltaFromBlackScholes": 69, "deltaMissing": 2,
+    "spotOpen": 190.08, "spotHigh": 190.31, "spotLow": 189.9, "spotClose": 190.2, "spotObservations": 88 }],
+  "buckets_total": 3,
+  "totals": { "…": "…" },
+  "deltaSource": "69 print(s) used Black-Scholes delta from the print's own NBBO mid (IV solved), spot, strike, and time to expiry; 2 sided print(s) had no derivable delta and were excluded. …",
+  "note": "Built from EVERY normalized print of the underlying in this session: the engine's premium floor and emit policy do NOT apply, …"
+}
+```
+
+### `whale_bars` — the spot tape as bars
+
+OHLC bars of the underlying built from the spot observations riding on the option prints in the recorder — `source: "spot-tape-from-prints"`, always. Params: `underlying`, `timeframe` (`1m`…`1d`, default `5m`), `session_date`, `limit`. Each bar carries `observations` (prints that saw a spot inside it — a tape density) and `volume: null`; the `note` says these are not exchange bars and that the engine's own `GET /api/bars` serves the vendor's equity bars when the feed has them (Alpaca, Massive).
+
+### `whale_gex_heatmap` — GEX, strike × expiry
+
+Rows are the strikes nearest spot, columns the chain's expiries, cells net dollar gamma per 1% move; `strikeTotals` is the all-expiry ladder at each row, `expiryTotals` each expiry's whole ladder, plus `spotRowIndex`, `zeroGamma`, `strikesOmitted`. Params: `underlying`, `rows` (default 21), `spot` to **re-price** the snapshotted chain at a fresher spot. Two lines to relay every time: `conventionNote` (the dealer sign convention is an assumption, flip via `greeks.gexConvention`) and `pricing.note` (`chain as of <ts>, re-priced at spot <x> at <ts>` — old open interest at a new price, not a new chain).
+
+```json
+{ "name": "whale_gex_heatmap", "arguments": { "underlying": "NVDA", "rows": 5, "spot": 191.2 } }
+```
+

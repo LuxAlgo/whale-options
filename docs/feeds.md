@@ -189,9 +189,12 @@ interface FeedAdapter {
   normalizeCondition(code): NormalizedCondition;
   getHistoricalOptionTrades?(underlying, dateIso, signal?): AsyncIterable<RawOptionTrade>;  // powers `whale backfill`
   getHistoricalChain?(underlying, dateIso): Promise<ChainSnapshot | null>;  // as-of-date OI/IV for daily history
+  getUnderlyingBars?(symbol, timeframe, range): Promise<UnderlyingBarsResult | null>;  // equity bars for the chart's price pane; null ⇒ the API falls back to the spot tape from prints and says so
   close?(): Promise<void>;
 }
 ```
+
+`getUnderlyingBars` is served today by `alpaca` (`GET /v2/stocks/{symbol}/bars`, IEX feed on the free tier) and `massive` (`GET /v2/aggs/ticker/{symbol}/range/...`, a stocks entitlement), and by the synthetic feed from its own seeded spot walk; `thetadata` and `tradier` leave it undefined with the reasoning in the adapter. Whatever the vendor cannot serve becomes the **spot tape from prints** — the underlying-price observations that rode on the option prints — and every `/api/bars` payload names its `source`.
 
 What earns trust, in order:
 
