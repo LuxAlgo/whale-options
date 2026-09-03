@@ -189,7 +189,7 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
   }
 
   return (
-    <div className="flex h-full min-h-0 flex-col gap-2">
+    <div className="flex h-full min-h-0 flex-col gap-2 overflow-y-auto">
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={underlying ?? ""}
@@ -261,33 +261,13 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
             bars: {bars.source}
           </span>
         )}
-        <span className="ml-auto text-[10px] text-zinc-600">
-          {live ? "live session" : "recorded session"} · {int(bars.bars.length)} bars ·{" "}
-          {int(counts.prints)} prints · {int(marked.length)} of {int(events.length)} events marked
-        </span>
-      </div>
-
-      <div className="relative min-h-[420px] flex-1 overflow-hidden rounded border border-zinc-800 bg-zinc-950">
-        <div ref={hostRef} className="absolute inset-0" />
-        {(!chartReady || bars.bars.length === 0) && (
-          <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-zinc-600">
-            {chartError
-              ? `chart failed to load: ${chartError}`
-              : bars.error
-                ? `bars query failed: ${bars.error}`
-                : flow.error
-                  ? `flow query failed: ${flow.error}`
-                  : bars.bars.length === 0 && chartReady
-                    ? "no bars for this session yet: the price pane fills as prints arrive"
-                    : "loading chart…"}
-          </div>
-        )}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-2 text-[10px] text-zinc-500">
-        <span className="uppercase tracking-wide">markers</span>
+        <span className="mx-1 h-5 w-px bg-zinc-800" aria-hidden="true" />
+        <span className="text-[10px] uppercase tracking-wide text-zinc-500">markers</span>
         {MARKER_KINDS.map((kind) => (
-          <label key={kind} className="flex cursor-pointer items-center gap-1 text-zinc-400">
+          <label
+            key={kind}
+            className="flex cursor-pointer items-center gap-1 text-[10px] text-zinc-400"
+          >
             <input
               type="checkbox"
               checked={markerFilter.kinds[kind]}
@@ -319,42 +299,65 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
           type="button"
           onClick={() => setMarker("top", markerFilter.top === null ? DEFAULT_TOP : null)}
           aria-pressed={markerFilter.top === null}
+          title={
+            markerFilter.top === null
+              ? "every event that passes the filters is marked"
+              : `the ${DEFAULT_TOP} largest by premium that pass the filters are marked`
+          }
           className={`rounded border px-2 py-1 text-xs ${
             markerFilter.top === null
               ? "border-zinc-600 bg-zinc-800 text-zinc-100"
               : "border-zinc-800 bg-zinc-900 text-zinc-400 hover:text-zinc-200"
           }`}
         >
-          {markerFilter.top === null ? `show top ${DEFAULT_TOP} by premium` : "show all"}
+          {markerFilter.top === null ? `top ${DEFAULT_TOP}` : "show all"}
         </button>
-        <span>
-          {int(marked.length)} of {int(events.length)} events marked
-          {markerFilter.top !== null && events.length > markerFilter.top
-            ? ` (the ${markerFilter.top} largest by premium that pass the filters)`
-            : ""}
+        <span className="text-[10px] text-zinc-500">
+          {int(marked.length)} of {int(events.length)} marked
         </span>
       </div>
 
-      {lastPoint && (
-        <p className="text-[10px] leading-4 text-zinc-400">
-          <span className="text-zinc-500">session so far</span> · calls{" "}
-          <Signed v={lastPoint.cumCallNet} /> · puts <Signed v={lastPoint.cumPutNet} /> · net
-          premium <Signed v={lastPoint.cumNetPremium} /> · directional delta{" "}
-          <span
-            className={lastPoint.cumDirectionalDelta >= 0 ? "text-emerald-400" : "text-red-400"}
-          >
-            {signedCompact(lastPoint.cumDirectionalDelta)}
-          </span>{" "}
-          · net volume{" "}
-          <span className={lastPoint.cumNetVolume >= 0 ? "text-emerald-400" : "text-red-400"}>
-            {signedCompact(lastPoint.cumNetVolume)} contracts
-          </span>{" "}
-          <span className="text-zinc-600">
-            (panes plot premium in $M, delta and contracts in thousands)
-          </span>
-        </p>
-      )}
+      <div className="relative min-h-[620px] flex-1 overflow-hidden rounded border border-zinc-800 bg-zinc-950">
+        <div ref={hostRef} className="absolute inset-0" />
+        {(!chartReady || bars.bars.length === 0) && (
+          <div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-zinc-600">
+            {chartError
+              ? `chart failed to load: ${chartError}`
+              : bars.error
+                ? `bars query failed: ${bars.error}`
+                : flow.error
+                  ? `flow query failed: ${flow.error}`
+                  : bars.bars.length === 0 && chartReady
+                    ? "no bars for this session yet: the price pane fills as prints arrive"
+                    : "loading chart…"}
+          </div>
+        )}
+      </div>
 
+      <p className="text-[10px] leading-4 text-zinc-400">
+        <span className="text-zinc-500">{live ? "live session" : "recorded session"}</span> ·{" "}
+        {int(bars.bars.length)} bars · {int(counts.prints)} prints ·{" "}
+        {lastPoint ? (
+          <>
+            calls <Signed v={lastPoint.cumCallNet} /> · puts <Signed v={lastPoint.cumPutNet} /> ·
+            net premium <Signed v={lastPoint.cumNetPremium} /> · directional delta{" "}
+            <span
+              className={lastPoint.cumDirectionalDelta >= 0 ? "text-emerald-400" : "text-red-400"}
+            >
+              {signedCompact(lastPoint.cumDirectionalDelta)}
+            </span>{" "}
+            · net volume{" "}
+            <span className={lastPoint.cumNetVolume >= 0 ? "text-emerald-400" : "text-red-400"}>
+              {signedCompact(lastPoint.cumNetVolume)} contracts
+            </span>{" "}
+            <span className="text-zinc-600">
+              (panes plot premium in $M, delta and contracts in thousands)
+            </span>
+          </>
+        ) : (
+          <span className="text-zinc-600">no prints yet this session</span>
+        )}
+      </p>
       {gexOn && (
         <p className="rounded border border-amber-500/20 bg-amber-500/5 px-2 py-1 text-[10px] leading-4 text-amber-200/80">
           <span className="mr-1 font-bold uppercase text-amber-400/90">GEX levels</span>
@@ -366,45 +369,37 @@ export function ChartView({ status, active }: { status: EngineStatus | null; act
         </p>
       )}
 
-      <div className="space-y-1 text-[10px] leading-4 text-zinc-500">
-        <p>
-          <span className="text-zinc-400">series</span> · every print, no premium floor ·{" "}
-          {int(counts.sided)} sided, {int(counts.unsided)} unsided (mid/unknown/side-voiding
-          conditions, excluded from sign), {int(counts.cancels)} cancels · delta:{" "}
-          {int(counts.deltaFromChain)} from chain greeks, {int(counts.deltaFromBlackScholes)}{" "}
-          Black-Scholes from the print's own NBBO mid/spot, {int(counts.deltaMissing)} missing
-          (excluded, never guessed) · markers are the engine's emitted sweeps, blocks, and splits
-          (the premium floor applies to markers only), sized by premium, colored by side, calls
-          above / puts below; click one for its breakdown
-        </p>
-        {flow.note && <p className="max-w-5xl">note: {flow.note}</p>}
-        {bars.note && <p className="max-w-5xl">bars: {bars.note}</p>}
-        {gexOn && gex.ladder && (
-          <p className="max-w-5xl text-amber-200/70">
-            <span className="mr-1 font-bold uppercase text-amber-400/90">assumption</span>
-            GEX levels: convention "{gex.ladder.convention}": {gex.ladder.conventionNote} ·{" "}
-            {gex.ladder.pricing.note}
-            {gex.ladder.pricing.repricedTs !== null
-              ? ` · last re-priced ${etDateTime(gex.ladder.pricing.repricedTs)} ET`
-              : ""}
+      <details className="text-[10px] leading-4 text-zinc-500">
+        <summary className="cursor-pointer select-none text-zinc-400 hover:text-zinc-200">
+          what is on this chart (every series defined, every exclusion counted)
+        </summary>
+        <div className="mt-1 space-y-1">
+          <p>
+            <span className="text-zinc-400">series</span> · every print, no premium floor ·{" "}
+            {int(counts.sided)} sided, {int(counts.unsided)} unsided (mid/unknown/side-voiding
+            conditions, excluded from sign), {int(counts.cancels)} cancels · delta:{" "}
+            {int(counts.deltaFromChain)} from chain greeks, {int(counts.deltaFromBlackScholes)}{" "}
+            Black-Scholes from the print's own NBBO mid/spot, {int(counts.deltaMissing)} missing
+            (excluded, never guessed) · markers are the engine's emitted sweeps, blocks, and splits
+            (the premium floor applies to markers only), sized by premium, colored by side, calls
+            above / puts below; click one for its breakdown
           </p>
-        )}
-        {gexOn && gex.error && (
-          <p className="text-amber-400">GEX levels unavailable: {gex.error}</p>
-        )}
-        <p>
-          charts drawn by{" "}
-          <a
-            href="https://github.com/LuxAlgo/Vela"
-            target="_blank"
-            rel="noreferrer"
-            className="text-zinc-400 underline decoration-zinc-700 hover:text-zinc-200"
-          >
-            Vela
-          </a>{" "}
-          in the browser; the engine computes every number shown.
-        </p>
-      </div>
+          {flow.note && <p className="max-w-5xl">note: {flow.note}</p>}
+          {bars.note && <p className="max-w-5xl">bars: {bars.note}</p>}
+        </div>
+      </details>
+      <p className="text-[10px] leading-4 text-zinc-500">
+        charts drawn by{" "}
+        <a
+          href="https://github.com/LuxAlgo/Vela"
+          target="_blank"
+          rel="noreferrer"
+          className="text-zinc-400 underline decoration-zinc-700 hover:text-zinc-200"
+        >
+          Vela
+        </a>{" "}
+        in the browser; the engine computes every number shown.
+      </p>
 
       {selected && <EventDrawer seed={selected} onClose={() => setSelected(null)} />}
     </div>

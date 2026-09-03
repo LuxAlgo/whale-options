@@ -62,6 +62,10 @@ export const VOLUME_UNIT = 1_000;
 
 const MARKERS_LAYER = "whale-flow-markers";
 const GEX_LAYER = "whale-gex-levels";
+/** Pane height weights: the price pane takes ~55% of the chart, the three studies share the rest. */
+const PRICE_PANE_WEIGHT = 3.7;
+const STUDY_PANE_WEIGHT = 1;
+
 const PANE_NET_PREMIUM = "whale-net-premium";
 const PANE_DELTA = "whale-directional-delta";
 const PANE_NET_VOLUME = "whale-net-volume";
@@ -603,6 +607,7 @@ export function createFlowChart(host: HTMLElement, opts: FlowChartOptions): Flow
   let markers: FlowEvent[] = [];
   let gex: GexLadder | null = null;
   let disposed = false;
+  let sizePanes: (() => void) | null = null;
 
   const onClick = (e: MouseEvent) => {
     const hit = markerAtClient(e.clientX, e.clientY);
@@ -633,12 +638,36 @@ export function createFlowChart(host: HTMLElement, opts: FlowChartOptions): Flow
       { renderer },
     );
     chart.renderer.set("timezone", "America/New_York");
-    chart.addNativeIndicator(PANE_NET_PREMIUM);
-    chart.addNativeIndicator(PANE_DELTA);
-    chart.addNativeIndicator(PANE_NET_VOLUME);
+    const studies = [PANE_NET_PREMIUM, PANE_DELTA, PANE_NET_VOLUME].map((type) =>
+      chart!.addNativeIndicator(type),
+    );
+    // Pane proportions: Vela lays panes out by relative heightWeight (price 3,
+    // studies 1 by default = 50/50 with three studies). Re-declare the panes
+    // with the weights we want; the orchestrator names a native's pane
+    // `pane-<handle id>`. Users can still drag the separators afterwards.
+    sizePanes = () => {
+      if (!renderer || disposed) return;
+      renderer.ensurePane({
+        id: "price",
+        kind: "price",
+        order: 0,
+        heightWeight: PRICE_PANE_WEIGHT,
+      });
+      studies.forEach((handle, i) => {
+        renderer?.ensurePane({
+          id: `pane-${handle.id}`,
+          kind: "study",
+          order: i + 1,
+          heightWeight: STUDY_PANE_WEIGHT,
+        });
+      });
+    };
+    sizePanes();
     pushLayers();
     void chart.ready().then(() => {
-      if (!disposed) pushLayers();
+      if (disposed) return;
+      sizePanes?.();
+      pushLayers();
     });
   };
 
@@ -656,7 +685,9 @@ export function createFlowChart(host: HTMLElement, opts: FlowChartOptions): Flow
       // Swap bars in place: panes, layers, and subscriptions survive; the
       // viewport is kept unless the timeframe changed (then Vela reframes).
       const visible = tfChanged ? undefined : (chart.getVisibleRange() ?? undefined);
-      void chart.setMarket({ data, timeframe, ...(visible ? { visibleRange: visible } : {}) });
+      void chart
+        .setMarket({ data, timeframe, ...(visible ? { visibleRange: visible } : {}) })
+        .then(() => sizePanes?.());
     },
     setFlow(points) {
       paneState.points = points;

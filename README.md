@@ -215,7 +215,7 @@ The dashboard's **chart** tab puts the flow on a price chart, drawn in the brows
 
 <img src="docs/assets/chart-flow.png" alt="Whale Options dashboard chart tab: underlying candles with sweep, block, and split markers sized by premium and colored by side, above three panes built from every print — net premium (calls, puts, net), directional delta, and net volume — with the GEX levels legend and the series notes" width="100%">
 
-<div align="center"><sub>A recorded session on the chart tab at 5-minute bars: candles from the spot tape (the badge says so), the 40 largest sweeps/blocks/splits by premium marked at their time and spot (the marker filter defaults to that; "show all" paints every event), and the three per-print panes in $M / thousands, notes verbatim underneath. Seeded synthetic feed.</sub></div>
+<div align="center"><sub>A recorded session on the chart tab at 5-minute bars: candles from the spot tape (the badge says so), the 40 largest sweeps/blocks/splits by premium marked at their time and spot (the marker filter defaults to that; "show all" paints every event), and the three per-print panes in $M / thousands; the session totals sit under the chart and the full series definitions and exclusion counts open from the "what is on this chart" disclosure. Seeded synthetic feed.</sub></div>
 
 What is on it, and what each series is:
 
