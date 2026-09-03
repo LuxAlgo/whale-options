@@ -22,6 +22,7 @@ import {
   spotBarsFromBuckets,
 } from "../flow/series.js";
 import { computeGex } from "../greeks/gex.js";
+import { computeGexHeatmap } from "../greeks/gex-heatmap.js";
 import { ivRank, maxPain, netFlowReport, oiDeltas } from "../market/index.js";
 import type { FlightRecorder } from "../store/types.js";
 import type { EventKind, FlowEvent, Side } from "../types.js";
@@ -122,7 +123,10 @@ export function createWhaleServer(opts: {
       return;
     }
 
-    const gexMatch = /^\/api\/gex\/([A-Za-z0-9.]+)$/.exec(path);
+    // GEX ladder and heatmap. `spot=` re-prices the snapshotted chain at a live
+    // spot (the dashboard's throttled live re-pricing) — the payload's
+    // `pricing` line states the chain time and the re-pricing spot/time.
+    const gexMatch = /^\/api\/gex\/([A-Za-z0-9.]+)(\/heatmap)?$/.exec(path);
     if (req.method === "GET" && gexMatch?.[1]) {
       const snapshot = store.getChainSnapshot(gexMatch[1]);
       if (!snapshot) {
@@ -131,12 +135,32 @@ export function createWhaleServer(opts: {
         });
         return;
       }
-      const ladder = computeGex(snapshot, {
+      const q = url.searchParams;
+      const spotOverride = numberParam(q.get("spot"));
+      if (q.get("spot") !== null && (spotOverride === undefined || spotOverride <= 0)) {
+        sendJson(res, 400, { error: "spot must be a positive number" });
+        return;
+      }
+      const greeks = {
         r: config.greeks.r,
         q: config.greeks.qByUnderlying[snapshot.underlying] ?? config.greeks.q,
         convention: config.greeks.gexConvention,
-        expiry: url.searchParams.get("expiry") ?? undefined,
-      });
+        spot: spotOverride,
+        repricedTs: spotOverride === undefined ? undefined : Date.now(),
+      };
+      if (gexMatch[2]) {
+        const heatmap = computeGexHeatmap(snapshot, {
+          ...greeks,
+          rows: numberParam(q.get("rows")),
+        });
+        if (!heatmap) {
+          sendJson(res, 422, { error: "chain snapshot has no usable contracts (no OI/IV/greeks)" });
+          return;
+        }
+        sendJson(res, 200, { heatmap });
+        return;
+      }
+      const ladder = computeGex(snapshot, { ...greeks, expiry: q.get("expiry") ?? undefined });
       if (!ladder) {
         sendJson(res, 422, { error: "chain snapshot has no usable contracts (no OI/IV/greeks)" });
         return;

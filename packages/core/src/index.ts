@@ -73,7 +73,12 @@ export {
   normPdf,
 } from "./greeks/black-scholes.js";
 export { brent, type IvSolveInput, solveIv } from "./greeks/brent.js";
-export { computeGex, type GexOptions } from "./greeks/gex.js";
+export { computeGex, type GexOptions, gexPricing } from "./greeks/gex.js";
+export {
+  computeGexHeatmap,
+  GEX_HEATMAP_NOTE,
+  type GexHeatmapOptions,
+} from "./greeks/gex-heatmap.js";
 // Market-structure analytics (daily-history layer)
 export * from "./market/index.js";
 export { type NormalizeResult, normalizeTrade } from "./normalize/normalize.js";

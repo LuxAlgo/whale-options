@@ -45,6 +45,8 @@ beforeAll(async () => {
     if (tick) agg.push(tick);
   }
   store.upsertFlowBuckets(agg.drainDirty());
+  const chain = await feed.getChainSnapshot("NVDA");
+  if (chain) store.upsertChainSnapshot(chain);
   server = createWhaleServer({ store, config, adapter: feed });
   const addr = await server.listen();
   expect(addr.port).toBeGreaterThan(0); // the bound ephemeral port, not the configured 0
@@ -137,5 +139,38 @@ describe("GET /api/flow", () => {
     expect(status).toBe(200);
     expect(body.series.buckets).toEqual([]);
     expect(body.series.totals.prints).toBe(0);
+  });
+});
+
+describe("GET /api/gex", () => {
+  it("the ladder states its pricing; spot= re-prices and says when", async () => {
+    const base = await getJson("/api/gex/NVDA");
+    expect(base.status).toBe(200);
+    expect(base.body.gex.pricing.spotSource).toBe("chain-snapshot");
+    expect(base.body.gex.conventionNote).toContain("assumption");
+
+    const spot = base.body.gex.spot * 1.02;
+    const moved = await getJson(`/api/gex/NVDA?spot=${spot}`);
+    expect(moved.status).toBe(200);
+    expect(moved.body.gex.spot).toBeCloseTo(spot, 6);
+    expect(moved.body.gex.pricing.spotSource).toBe("override");
+    expect(moved.body.gex.pricing.note).toMatch(/^chain as of .*, re-priced at spot .* at /);
+    expect(moved.body.gex.conventionNote).toBe(base.body.gex.conventionNote);
+    expect((await getJson("/api/gex/NVDA?spot=-1")).status).toBe(400);
+  });
+
+  it("serves the strike-by-expiry heatmap with totals, spot row, and the notes", async () => {
+    const { status, body } = await getJson("/api/gex/NVDA/heatmap?rows=9");
+    expect(status).toBe(200);
+    const heat = body.heatmap;
+    expect(heat.strikes).toHaveLength(9);
+    expect(heat.cells).toHaveLength(9);
+    expect(heat.cells[0]).toHaveLength(heat.expiries.length);
+    expect(heat.expiryTotals).toHaveLength(heat.expiries.length);
+    expect(heat.spotRowIndex).toBeGreaterThanOrEqual(0);
+    expect(heat.conventionNote).toContain("assumption");
+    expect(heat.note).toContain("per 1% spot move");
+    expect(heat.pricing.note).toContain("chain as of");
+    expect((await getJson("/api/gex/ZZZZ/heatmap")).status).toBe(404);
   });
 });
