@@ -14,15 +14,15 @@ whale run  ──writes──▶  .whale/whale.db (SQLite, WAL)  ◀──reads�
 
 ## Installation
 
-The examples use `--db` pointing at the engine's store (default `.whale/whale.db`, resolved from wherever `whale run` runs). Adjust the path to yours.
+`@luxalgo/whale-mcp` is not published to npm yet, so the server runs from a whale-options checkout: clone the repository and run `pnpm install && pnpm build`, which writes the server to `packages/mcp/dist/index.js`. The examples use `/path/to/whale-options` for the checkout and `--db` pointing at the engine's store (default `.whale/whale.db`, resolved from wherever `whale run` runs). Adjust both paths to yours.
 
 ### Claude Code
 
 ```bash
-claude mcp add whale-options -- npx -y @luxalgo/whale-mcp --db ~/.whale/whale.db
+claude mcp add whale-options -- node /path/to/whale-options/packages/mcp/dist/index.js --db /path/to/whale-options/.whale/whale.db
 ```
 
-Or, against the HTTP transport (start `whale-mcp --http 8788` yourself, e.g. alongside the engine):
+Or, against the HTTP transport (start `node packages/mcp/dist/index.js --db .whale/whale.db --http 8788` yourself from the checkout, e.g. alongside the engine):
 
 ```bash
 claude mcp add --transport http whale-options http://127.0.0.1:8788/mcp
@@ -36,8 +36,12 @@ Settings → Developer → Edit Config, then add to `claude_desktop_config.json`
 {
   "mcpServers": {
     "whale-options": {
-      "command": "npx",
-      "args": ["-y", "@luxalgo/whale-mcp", "--db", "/Users/you/.whale/whale.db"]
+      "command": "node",
+      "args": [
+        "/path/to/whale-options/packages/mcp/dist/index.js",
+        "--db",
+        "/path/to/whale-options/.whale/whale.db"
+      ]
     }
   }
 }
@@ -45,9 +49,9 @@ Settings → Developer → Edit Config, then add to `claude_desktop_config.json`
 
 ### Generic MCP clients
 
-- **stdio** (default): have the client spawn `npx -y @luxalgo/whale-mcp --db <path>`. The server logs to stderr only; stdout carries the protocol.
-- **Streamable HTTP**: run `whale-mcp --db <path> --http 8788` and point the client at `http://127.0.0.1:8788/mcp`.
-- Debugging: `npx @modelcontextprotocol/inspector npx -y @luxalgo/whale-mcp --db <path>` gives you a UI to poke every tool.
+- **stdio** (default): have the client spawn `node /path/to/whale-options/packages/mcp/dist/index.js --db <path>`. The server logs to stderr only; stdout carries the protocol.
+- **Streamable HTTP**: run `node /path/to/whale-options/packages/mcp/dist/index.js --db <path> --http 8788` and point the client at `http://127.0.0.1:8788/mcp`.
+- Debugging: `npx @modelcontextprotocol/inspector node /path/to/whale-options/packages/mcp/dist/index.js --db <path>` gives you a UI to poke every tool.
 
 ## stdio vs `--http`
 

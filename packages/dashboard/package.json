@@ -8,6 +8,7 @@
     "url": "git+https://github.com/LuxAlgo/whale-options.git",
     "directory": "packages/dashboard"
   },
+  "homepage": "https://www.luxalgo.com/whale-options/",
   "type": "module",
   "files": [
     "dist"
