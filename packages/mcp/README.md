@@ -6,12 +6,14 @@ MCP server over your local [whale-options](https://github.com/LuxAlgo/whale-opti
 
 ## Run
 
+The package is not published to npm yet. From the root of a [whale-options](https://github.com/LuxAlgo/whale-options) checkout, after `pnpm install && pnpm build`:
+
 ```bash
 # stdio (default), what MCP clients spawn:
-npx @luxalgo/whale-mcp --db ~/.whale/whale.db
+node packages/mcp/dist/index.js --db .whale/whale.db
 
 # streamable HTTP on loopback:
-npx @luxalgo/whale-mcp --db ~/.whale/whale.db --http 8788
+node packages/mcp/dist/index.js --db .whale/whale.db --http 8788
 # → endpoint: http://127.0.0.1:8788/mcp
 ```
 

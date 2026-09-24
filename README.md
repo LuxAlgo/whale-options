@@ -2,6 +2,8 @@
 
 <img src="docs/assets/banner.svg" alt="Whale Options: the options-flow engine that shows its work" width="100%">
 
+# Whale Options
+
 <br>
 <br>
 
@@ -18,9 +20,9 @@
 <br>
 <br>
 
-<a href="#the-60-second-demo">Demo</a> · <a href="#bring-your-feed">Feeds</a> · <a href="#classification-sweeps-blocks-splits-and-the-boring-parts-that-make-them-true">Classification</a> · <a href="#gex">GEX</a> · <a href="#charting-flow-on-the-tape">Charting</a> · <a href="#alerts">Alerts</a> · <a href="#flight-recorder-and-replay">Replay</a> · <a href="#measure-it">Audit</a> · <a href="#agent-native-the-mcp-server">MCP</a> · <a href="#documentation">Docs</a>
+<a href="https://www.luxalgo.com/whale-options/">Homepage</a> · <a href="#the-60-second-demo">Demo</a> · <a href="#bring-your-feed">Feeds</a> · <a href="#classification-sweeps-blocks-splits-and-the-boring-parts-that-make-them-true">Classification</a> · <a href="#gex">GEX</a> · <a href="#charting-flow-on-the-tape">Charting</a> · <a href="#alerts">Alerts</a> · <a href="#flight-recorder-and-replay">Replay</a> · <a href="#measure-it">Audit</a> · <a href="#agent-native-the-mcp-server">MCP</a> · <a href="#documentation">Docs</a>
 
-<sub>Whale Options is a <a href="https://luxalgo.com">LuxAlgo</a> open-source project. Official repository: <a href="https://github.com/LuxAlgo/whale-options">github.com/LuxAlgo/whale-options</a></sub>
+<sub>Whale Options is a <a href="https://luxalgo.com">LuxAlgo</a> open-source project.</sub>
 
 </div>
 
@@ -32,10 +34,13 @@ Options flow was never magic. Open the detection and it's just tape.
 
 ## The 60-second demo
 
-Zero keys, synthetic tape, real engine:
+Zero keys, synthetic tape, real engine. The CLI is not published to npm yet, so run it from a checkout (Node 20.10+ and pnpm):
 
 ```bash
-npx @luxalgo/whale-cli run --feed synthetic
+git clone https://github.com/LuxAlgo/whale-options && cd whale-options
+pnpm install && pnpm build
+alias whale="node $PWD/packages/cli/dist/index.js"
+whale run --feed synthetic
 ```
 
 Everything below is captured from that command against the seeded synthetic feed. No real market data appears anywhere in this repository.
@@ -211,7 +216,7 @@ The gex tab also renders the ladder as a **strike-by-expiry heatmap** (`GET /api
 
 ## Charting: flow on the tape
 
-The dashboard's **chart** tab puts the flow on a price chart, drawn in the browser by [Vela](https://github.com/LuxAlgo/Vela), LuxAlgo's open-source charting library (Apache-2.0, loaded on first visit so the flow table's bundle is unchanged). The engine computes every number on it; the chart is a window.
+The dashboard's **chart** tab puts the flow on a price chart, drawn in the browser by [Vela™](https://github.com/LuxAlgo/Vela), LuxAlgo's open-source charting library (Apache-2.0, loaded on first visit so the flow table's bundle is unchanged). The engine computes every number on it; the chart is a window.
 
 <img src="docs/assets/chart-flow.png" alt="Whale Options dashboard chart tab: underlying candles with sweep, block, and split markers sized by premium and colored by side, above three panes built from every print — net premium (calls, puts, net), directional delta, and net volume — with the GEX levels legend and the series notes" width="100%">
 
